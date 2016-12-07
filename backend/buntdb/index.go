@@ -43,12 +43,7 @@ func (i *BuntDBIndex) Resolve(r http.Request) (string, error) {
 	return res[1], nil
 }
 
-func (i *BuntDBIndex) Get(r http.Request, b types.Backend) (bool, *types.File, error) {
-	flake, err := i.Resolve(r)
-	if err != nil {
-		return false, nil, err
-	}
-
+func (i *BuntDBIndex) Get(r types.GetRequest, b types.Backend) (bool, *types.File, error) {
 	file, err := b.Get(flake)
 
 	return false, file, err
@@ -60,23 +55,17 @@ func (i *BuntDBIndex) Put(r types.PutRequest, b types.Backend) (bool, *types.Fil
 	file.CreatedAt = time.Now().UTC()
 	file.Data = r.Data
 	file.Public = r.Public
-	file.TTL = time.Now().Sub(time.Now().AddDate(0, 1, 0))
 
 	flake, err := snowflakes.NewSnowflake()
 	if err != nil {
 		return false, nil, err
 	}
 
-	err = b.Upload(flake, file)
+	err = b.Upload(flake, types.DefaultTTL, file)
 
 	return false, file, err
 }
 
-func (i *BuntDBIndex) Del(r http.Request, b types.Backend) (bool, error) {
-	flake, err := i.Resolve(r)
-	if err != nil {
-		return false, err
-	}
-
-	return false, b.Delete(flake)
+func (i *BuntDBIndex) Del(r types.DelRequest, b types.Backend) (bool, error) {
+	return false, b.Delete(r.Flake)
 }

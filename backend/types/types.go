@@ -11,7 +11,8 @@ type Backend interface {
 	Name() string
 	// Upload creates a file. If the file already exist, it must abort
 	// with an error
-	Upload(name string, file *File) error
+	Upload(name string, ttl *time.Duration, file *File) error
+	// Exists returns nil if the name exists or an error if it does not.
 	Exists(name string) error
 	Get(name string) (*File, error)
 
@@ -45,7 +46,7 @@ type Index interface {
 	// Get returns the file associated with the request using the provided
 	// backend. "cached"" indidcates wether the file was retrieved from
 	// cache. If "err" is set, it indicates negative caching.
-	Get(http.Request, Backend) (cached bool, file *File, err error)
+	Get(GetRequest, Backend) (cached bool, file *File, err error)
 
 	// Put stores the content of the request into the provided backend.
 	// "cached" indicates if the put request is continuing in the background
@@ -54,7 +55,7 @@ type Index interface {
 
 	// Del deletes a file from the given backend. "cached" indicates
 	// if the deletion is pending in background.
-	Del(http.Request, Backend) (cached bool, err error)
+	Del(DelRequest, Backend) (cached bool, err error)
 
 	// Flush blocks until all cache operations are complete and blocks
 	// new cache operations until it completes.
@@ -65,10 +66,9 @@ type Index interface {
 }
 
 type File struct {
-	TTL       time.Duration
-	CreatedAt time.Time
-	Public    bool
-	Data      []byte
+	CreatedAt time.Time `json:"created_at"`
+	Public    bool      `json:"public"`
+	Data      []byte    `json:"data"`
 }
 
 type PutRequest struct {
@@ -76,3 +76,14 @@ type PutRequest struct {
 	Public bool
 	TTL    time.Duration
 }
+
+type GetRequest struct {
+	Flake string
+}
+
+type DelRequest struct {
+	Flake string
+}
+
+var defaultTTL = time.Hour * 24 * 30
+var DefaultTTL = &defaultTTL
