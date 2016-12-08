@@ -175,6 +175,7 @@ func (i *BuntDBIndex) checkAndClearFlake(flake string, be types.Backend) error {
 
 func (i *BuntDBIndex) Collect(be types.Backend) error {
 	return i.db.Update(func(tx *buntdb.Tx) error {
-		tx.AscendLessThan("index-file-deleteat")
+		//tx.AscendLessThan("index-file-deleteat")
+		return nil
 	})
 }
