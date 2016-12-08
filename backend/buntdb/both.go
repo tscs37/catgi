@@ -11,6 +11,12 @@ type buntConfig struct {
 	File string `mapstructure:"file"`
 }
 
+const (
+	indexFileDeleteAt  = "index-file-deleteat"
+	indexFilePublic    = "index-file-public"
+	indexFileCreatedAt = "index-file-createdat"
+)
+
 func init() {
 	backend.NewDriver("buntdb", NewBuntDBIndex)
 	backend.NewDriver("buntdb", NewBuntDBBackend)
@@ -36,6 +42,19 @@ func NewBuntDBIndex(params map[string]interface{}) (types.Index, error) {
 		}
 	}
 	db, err := buntdb.Open(config.File)
+	if err != nil {
+		return nil, err
+	}
+
+	err = db.CreateIndex(indexFileDeleteAt, "/meta/file/*/delete_at", buntdb.IndexInt)
+	if err != nil {
+		return nil, err
+	}
+	err = db.CreateIndex(indexFileCreatedAt, "/meta/file/*/created_at", buntdb.IndexInt)
+	if err != nil {
+		return nil, err
+	}
+	err = db.CreateIndex(indexFilePublic, "/meta/file/*/public", buntdb.IndexString)
 	if err != nil {
 		return nil, err
 	}
@@ -65,5 +84,5 @@ func NewBuntDBBackend(params map[string]interface{}) (types.Backend, error) {
 	if err != nil {
 		return nil, err
 	}
-	return BuntDBBackend{db: db}, nil
+	return &BuntDBBackend{db: db}, nil
 }

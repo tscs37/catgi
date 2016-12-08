@@ -2,9 +2,9 @@ package buntdb
 
 import (
 	"encoding/json"
-	"time"
 
 	"git.timschuster.info/rls.moe/catgi/backend/types"
+	"github.com/Sirupsen/logrus"
 	"github.com/tidwall/buntdb"
 )
 
@@ -12,28 +12,25 @@ type BuntDBBackend struct {
 	db *buntdb.DB
 }
 
-var defKeyOpts = buntdb.SetOptions{
-	Expires: true,
-	TTL:     time.Hour * 24 * 30,
-}
-
 func (b *BuntDBBackend) Name() string { return "buntdb-backend" }
 
-func (b *BuntDBBackend) Upload(name string, ttl *time.Duration, file *types.File) error {
+func (b *BuntDBBackend) Upload(name string, file *types.File) error {
 	return b.db.Update(func(tx *buntdb.Tx) error {
+		logrus.Debug("Storing file ", name)
+		logrus.Debug("Checking DB, should return not found")
 		_, err := tx.Get("/file/" + name)
-		if err != nil {
+		if err != buntdb.ErrNotFound {
+			logrus.Debug("Error was not ErrNotFound")
 			return err
 		}
+		logrus.Debug("Encode File to JSON")
 		encoded, err := json.Marshal(file)
 		if err != nil {
+			logrus.Debug("Encoding Error ", err)
 			return err
 		}
-		keyopts := defKeyOpts
-		if ttl != nil {
-			keyopts.TTL = *ttl
-		}
-		_, _, err = tx.Set("/file/"+name, string(encoded), &keyopts)
+		logrus.Debug("Storing JSON into DB")
+		_, _, err = tx.Set("/file/"+name, string(encoded), nil)
 		return err
 	})
 }
@@ -41,7 +38,7 @@ func (b *BuntDBBackend) Upload(name string, ttl *time.Duration, file *types.File
 func (b *BuntDBBackend) Exists(name string) error {
 	return b.db.View(func(tx *buntdb.Tx) error {
 		_, err := tx.Get("/file/" + name)
-		if err != nil {
+		if err != buntdb.ErrNotFound {
 			return err
 		}
 		return nil
@@ -49,17 +46,27 @@ func (b *BuntDBBackend) Exists(name string) error {
 }
 
 func (b *BuntDBBackend) Get(name string) (*types.File, error) {
-	var file *types.File
+	var file = &types.File{}
 
 	errTx := b.db.View(func(tx *buntdb.Tx) error {
+		logrus.Debug("Getting file ", name)
 		dat, err := tx.Get("/file/" + name)
 		if err != nil {
+			logrus.Debug("File does not exist, returning error from Tx")
 			return err
 		}
+		logrus.Debug("Unmarshalling file")
 		return json.Unmarshal([]byte(dat), file)
 	})
 
 	return file, errTx
+}
+
+func (b *BuntDBBackend) Delete(name string) error {
+	return b.db.Update(func(tx *buntdb.Tx) error {
+		_, err := tx.Delete("/file/" + name)
+		return err
+	})
 }
 
 func (b *BuntDBBackend) LoadIndex(i types.Index) error {
@@ -81,13 +88,6 @@ func (b *BuntDBBackend) StoreIndex(i types.Index) error {
 		_, _, err = tx.Set("/index/", string(dat), &buntdb.SetOptions{
 			Expires: false,
 		})
-		return err
-	})
-}
-
-func (b *BuntDBBackend) Delete(name string) error {
-	return b.db.Update(func(tx *buntdb.Tx) error {
-		_, err := tx.Delete("/file/" + name)
 		return err
 	})
 }
