@@ -1,14 +1,15 @@
 package backend
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
 	"git.timschuster.info/rls.moe/catgi/backend/types"
 )
 
-type driverCreator func(map[string]interface{}) (types.Backend, error)
-type indexCreator func(map[string]interface{}) (types.Index, error)
+type driverCreator func(map[string]interface{}, context.Context) (types.Backend, error)
+type indexCreator func(map[string]interface{}, context.Context) (types.Index, error)
 
 var backendDrivers = map[string]driverCreator{}
 var indexDrivers = map[string]indexCreator{}
@@ -25,16 +26,17 @@ func newNoDriverError(drv string) error {
 	return noDriverError{drvName: drv}
 }
 
-func NewBackend(driver string, params map[string]interface{}) (types.Backend, error) {
+func NewBackend(
+	driver string, params map[string]interface{}, ctx context.Context) (types.Backend, error) {
 	if f, ok := backendDrivers[driver]; ok {
-		return f(params)
+		return f(params, ctx)
 	}
 	return nil, newNoDriverError(driver)
 }
 
-func NewIndex(driver string, params map[string]interface{}) (types.Index, error) {
+func NewIndex(driver string, params map[string]interface{}, ctx context.Context) (types.Index, error) {
 	if f, ok := indexDrivers[driver]; ok {
-		return f(params)
+		return f(params, ctx)
 	}
 	return nil, newNoDriverError(driver)
 }
@@ -52,10 +54,10 @@ func InstalledDrivers() []string {
 
 func NewDriver(driver string, dfunc interface{}) error {
 	switch v := dfunc.(type) {
-	case func(map[string]interface{}) (types.Backend, error):
+	case func(map[string]interface{}, context.Context) (types.Backend, error):
 		backendDrivers[driver] = v
 		return nil
-	case func(map[string]interface{}) (types.Index, error):
+	case func(map[string]interface{}, context.Context) (types.Index, error):
 		indexDrivers[driver] = v
 		return nil
 	default:

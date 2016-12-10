@@ -3,10 +3,15 @@ package buntdb
 import (
 	"encoding/json"
 
+	"context"
+
 	"git.timschuster.info/rls.moe/catgi/backend/types"
+	"git.timschuster.info/rls.moe/catgi/logger"
 	"github.com/Sirupsen/logrus"
 	"github.com/tidwall/buntdb"
 )
+
+const bePackagename = "backend/buntdb/backend"
 
 type BuntDBBackend struct {
 	db *buntdb.DB
@@ -14,28 +19,29 @@ type BuntDBBackend struct {
 
 func (b *BuntDBBackend) Name() string { return "buntdb-backend" }
 
-func (b *BuntDBBackend) Upload(name string, file *types.File) error {
+func (b *BuntDBBackend) Upload(name string, file *types.File, ctx context.Context) error {
+	log := logger.LogFromCtx(bePackagename+".Upload", ctx)
 	return b.db.Update(func(tx *buntdb.Tx) error {
-		logrus.Debug("Storing file ", name)
-		logrus.Debug("Checking DB, should return not found")
+		log.Debug("Storing file ", name)
+		log.Debug("Checking DB, should return not found")
 		_, err := tx.Get("/file/" + name)
 		if err != buntdb.ErrNotFound {
-			logrus.Debug("Error was not ErrNotFound")
+			log.Debug("Error was not ErrNotFound")
 			return err
 		}
-		logrus.Debug("Encode File to JSON")
+		log.Debug("Encode File to JSON")
 		encoded, err := json.Marshal(file)
 		if err != nil {
 			logrus.Debug("Encoding Error ", err)
 			return err
 		}
-		logrus.Debug("Storing JSON into DB")
+		log.Debug("Storing JSON into DB")
 		_, _, err = tx.Set("/file/"+name, string(encoded), nil)
 		return err
 	})
 }
 
-func (b *BuntDBBackend) Exists(name string) error {
+func (b *BuntDBBackend) Exists(name string, ctx context.Context) error {
 	return b.db.View(func(tx *buntdb.Tx) error {
 		_, err := tx.Get("/file/" + name)
 		if err != buntdb.ErrNotFound {
@@ -45,43 +51,44 @@ func (b *BuntDBBackend) Exists(name string) error {
 	})
 }
 
-func (b *BuntDBBackend) Get(name string) (*types.File, error) {
+func (b *BuntDBBackend) Get(name string, ctx context.Context) (*types.File, error) {
 	var file = &types.File{}
+	log := logger.LogFromCtx(bePackagename+".Get", ctx)
 
 	errTx := b.db.View(func(tx *buntdb.Tx) error {
-		logrus.Debug("Getting file ", name)
+		log.Debug("Getting file ", name)
 		dat, err := tx.Get("/file/" + name)
 		if err != nil {
-			logrus.Debug("File does not exist, returning error from Tx")
+			log.Debug("File does not exist, returning error from Tx")
 			return err
 		}
-		logrus.Debug("Unmarshalling file")
+		log.Debug("Unmarshalling file")
 		return json.Unmarshal([]byte(dat), file)
 	})
 
 	return file, errTx
 }
 
-func (b *BuntDBBackend) Delete(name string) error {
+func (b *BuntDBBackend) Delete(name string, ctx context.Context) error {
 	return b.db.Update(func(tx *buntdb.Tx) error {
 		_, err := tx.Delete("/file/" + name)
 		return err
 	})
 }
 
-func (b *BuntDBBackend) LoadIndex(i types.Index) error {
+func (b *BuntDBBackend) LoadIndex(i types.Index, ctx context.Context) error {
 	return b.db.View(func(tx *buntdb.Tx) error {
 		dat, err := tx.Get("/index/")
 		if err != nil {
 			return err
 		}
-		return i.Unserialize([]byte(dat))
+		return i.Unserialize([]byte(dat), ctx)
 	})
 }
 
-func (b *BuntDBBackend) StoreIndex(i types.Index) error {
+func (b *BuntDBBackend) StoreIndex(i types.Index, ctx context.Context) error {
 	return b.db.Update(func(tx *buntdb.Tx) error {
-		dat, err := i.Serialize()
+		dat, err := i.Serialize(ctx)
 		if err != nil {
 			return err
 		}
@@ -90,4 +97,10 @@ func (b *BuntDBBackend) StoreIndex(i types.Index) error {
 		})
 		return err
 	})
+}
+
+func (b *BuntDBBackend) ListGlob(
+	glob string, ictx context.Context) (
+	[]*types.File, context.Context, error) {
+	return nil, nil, nil
 }

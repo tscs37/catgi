@@ -1,6 +1,8 @@
 package buntdb
 
 import (
+	"context"
+
 	"git.timschuster.info/rls.moe/catgi/backend"
 	"git.timschuster.info/rls.moe/catgi/backend/types"
 	"github.com/mitchellh/mapstructure"
@@ -22,7 +24,7 @@ func init() {
 	backend.NewDriver("buntdb", NewBuntDBBackend)
 }
 
-func NewBuntDBIndex(params map[string]interface{}) (types.Index, error) {
+func NewBuntDBIndex(params map[string]interface{}, ctx context.Context) (types.Index, error) {
 	var config = &buntConfig{}
 	{
 		decConf := &mapstructure.DecoderConfig{
@@ -61,7 +63,7 @@ func NewBuntDBIndex(params map[string]interface{}) (types.Index, error) {
 	return &BuntDBIndex{db: db}, nil
 }
 
-func NewBuntDBBackend(params map[string]interface{}) (types.Backend, error) {
+func NewBuntDBBackend(params map[string]interface{}, ctx context.Context) (types.Backend, error) {
 	var config = &buntConfig{}
 	{
 		decConf := &mapstructure.DecoderConfig{

@@ -8,72 +8,73 @@ import (
 	_ "git.timschuster.info/rls.moe/catgi/backend/buntdb"
 	"git.timschuster.info/rls.moe/catgi/backend/types"
 	"git.timschuster.info/rls.moe/catgi/config"
-	"git.timschuster.info/rls.moe/catgi/snowflakes"
+	"git.timschuster.info/rls.moe/catgi/logger"
 	"github.com/Sirupsen/logrus"
 )
 
 func main() {
-	logrus.SetLevel(logrus.DebugLevel)
+	ctx := logger.NewLoggingContext()
+	logger.SetLoggingLevel("debug", ctx)
+
+	log := logger.LogFromCtx("main", ctx)
+
 	conf, err := config.LoadConfig("./conf.json")
-	flake, err := snowflakes.NewSnowflake()
+
+	log.Info("Starting Backend")
+	be, err := backend.NewBackend(conf.Backend.Name, conf.Backend.Params, ctx)
 	if err != nil {
-		logrus.Errorf("Error: %s", err)
+		log.Errorf("Error: %s", err)
 		return
 	}
-	logrus.Info("Out: ", flake)
-	logrus.Infof("Drivers: %s", backend.InstalledDrivers())
-	logrus.Info("Starting Backend")
-	be, err := backend.NewBackend(conf.Backend.Name, conf.Backend.Params)
+	log.Infof("Loaded '%s' Backend Driver", be.Name())
+	log.Info("Starting Index")
+	idx, err := backend.NewIndex(conf.Index.Name, conf.Index.Params, ctx)
 	if err != nil {
-		logrus.Errorf("Error: %s", err)
+		log.Errorf("Error: %s", err)
 		return
 	}
-	logrus.Infof("Loaded '%s' Backend Driver", be.Name())
-	logrus.Info("Starting Index")
-	idx, err := backend.NewIndex(conf.Index.Name, conf.Index.Params)
-	if err != nil {
-		logrus.Errorf("Error: %s", err)
-		return
-	}
-	logrus.Infof("Loaded '%s' Index Driver", idx.Name())
+	log.Infof("Loaded '%s' Index Driver", idx.Name())
 
-	logrus.Info("Loading index")
-	err = be.LoadIndex(idx)
+	log.Info("Loading index")
+	err = be.LoadIndex(idx, ctx)
 	if err != nil {
-		logrus.Errorf("Error: %s", err)
+		log.Errorf("Error: %s", err)
 	}
 
-	logrus.Info("Store Index")
-	err = be.StoreIndex(idx)
-	if err != nil {
-		logrus.Errorf("Error: %s", err)
-	}
-
-	logrus.Info("Loading Index again")
-	err = be.LoadIndex(idx)
-	if err != nil {
-		logrus.Errorf("Error: %s", err)
-	}
-
-	logrus.Info("Storing Hello World")
+	log.Info("Storing Hello World")
 	_, f, err := idx.Put(types.File{
 		Data:     []byte("Hello World"),
 		Public:   true,
 		DeleteAt: time.Unix(0, 0),
-	}, be)
+	}, be, ctx)
 	if err != nil {
-		logrus.Errorf("Error: %s", err)
+		log.Errorf("Error: %s", err)
 		return
 	}
-	logrus.Infof("Stored at /%s/", f.Flake)
+	log.Infof("Stored at /%s/", f.Flake)
 
-	_, f, err = idx.Get(types.GetRequest{
+	log.Infof("Checking if file exists")
+
+	err = be.Exists(f.Flake, ctx)
+	if err != nil {
+		log.Infof("Result: %s", err)
+	}
+	err = be.Exists("doesnotexist", ctx)
+	if err != nil {
+		log.Infof("Result: %s", err)
+	}
+
+	_, f, err = idx.Get(types.File{
 		Flake: f.Flake,
-	}, be)
+	}, be, ctx)
 	if err != nil {
 		logrus.Errorf("Error: %s", err)
 		return
 	}
-	logrus.Infof("File at /%s/ contains: '%s'", f.Flake, f.Data)
-	logrus.Debugf("Raw Data: %#v", f)
+	log.WithField("file", "/"+f.Flake+"/").Infof("File contains %s'", f.Data)
+
+	err = be.StoreIndex(idx, ctx)
+	if err != nil {
+		log.Error("Error on store: %s", err)
+	}
 }

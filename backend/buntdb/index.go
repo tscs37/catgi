@@ -2,6 +2,7 @@ package buntdb
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"time"
 
@@ -22,7 +23,7 @@ func (i *BuntDBIndex) Name() string {
 	return "buntdb-index"
 }
 
-func (i *BuntDBIndex) Serialize() ([]byte, error) {
+func (i *BuntDBIndex) Serialize(ctx context.Context) ([]byte, error) {
 	var buf = bytes.NewBuffer([]byte{})
 	if err := i.db.Save(buf); err != nil {
 		return nil, err
@@ -30,17 +31,17 @@ func (i *BuntDBIndex) Serialize() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (i *BuntDBIndex) Unserialize(s []byte) error {
+func (i *BuntDBIndex) Unserialize(s []byte, ctx context.Context) error {
 	return i.db.Load(bytes.NewReader(s))
 }
 
-func (i *BuntDBIndex) Get(r types.GetRequest, b types.Backend) (bool, *types.File, error) {
-	err := i.checkAndClearFlake(r.Flake, b)
+func (i *BuntDBIndex) Get(r types.File, b types.Backend, ctx context.Context) (bool, *types.File, error) {
+	err := i.checkAndClearFlake(r.Flake, b, ctx)
 	if err != nil {
 		return false, nil, err
 	}
 
-	file, err := b.Get(r.Flake)
+	file, err := b.Get(r.Flake, ctx)
 
 	if file != nil {
 		file.Flake = r.Flake
@@ -49,7 +50,7 @@ func (i *BuntDBIndex) Get(r types.GetRequest, b types.Backend) (bool, *types.Fil
 	return false, file, err
 }
 
-func (i *BuntDBIndex) Put(r types.File, b types.Backend) (bool, *types.File, error) {
+func (i *BuntDBIndex) Put(r types.File, b types.Backend, ctx context.Context) (bool, *types.File, error) {
 	var file = &types.File{}
 
 	// Safely Copy the struct data to the file
@@ -62,7 +63,7 @@ func (i *BuntDBIndex) Put(r types.File, b types.Backend) (bool, *types.File, err
 	logrus.Debug("Determining File.DeleteAt...")
 	if file.DeleteAt.Unix() == 0 {
 		logrus.Debug("Using default TTL")
-		file.DeleteAt = time.Now().UTC().Add(*types.DefaultTTL)
+		file.DeleteAt = time.Now().UTC().Add(types.DefaultTTL)
 	} else if file.DeleteAt.Sub(time.Now().UTC()) > types.MaxTTL {
 		logrus.Debug("Using max TTL")
 		file.DeleteAt = time.Now().UTC().Add(types.MaxTTL)
@@ -80,7 +81,7 @@ func (i *BuntDBIndex) Put(r types.File, b types.Backend) (bool, *types.File, err
 	file.Flake = flake
 
 	err = i.db.Update(func(tx *buntdb.Tx) error {
-		err = b.Upload(flake, file)
+		err = b.Upload(flake, file, ctx)
 		if err != nil {
 			return err
 		}
@@ -112,17 +113,19 @@ func (i *BuntDBIndex) Put(r types.File, b types.Backend) (bool, *types.File, err
 	return false, file, err
 }
 
-func (i *BuntDBIndex) Del(r types.DelRequest, b types.Backend) (bool, error) {
-	return false, b.Delete(r.Flake)
+func (i *BuntDBIndex) Del(r types.File, b types.Backend, ctx context.Context) (bool, error) {
+	return false, b.Delete(r.Flake, ctx)
 }
 
 // Flush and Clear do nothing on this simple Index yet
 
-func (i *BuntDBIndex) Flush() error { return nil }
-func (i *BuntDBIndex) Clear() error { return nil }
+func (i *BuntDBIndex) Flush(_ context.Context) error { return nil }
+func (i *BuntDBIndex) Clear(_ context.Context) error { return nil }
 
 // checkAndClearFlake deletes flakes that are expired
-func (i *BuntDBIndex) checkAndClearFlake(flake string, be types.Backend) error {
+func (i *BuntDBIndex) checkAndClearFlake(
+	flake string, be types.Backend, ctx context.Context) error {
+
 	return i.db.Update(func(tx *buntdb.Tx) error {
 		logrus.Debug("Checking if file meta exists")
 		dat, err := tx.Get("/meta/file/" + flake + "/delete_at/")
@@ -141,7 +144,7 @@ func (i *BuntDBIndex) checkAndClearFlake(flake string, be types.Backend) error {
 		}
 		if !time.Unix(unixDelAt, 0).After(time.Now().UTC()) {
 			logrus.Debug("File expired, deleting")
-			err := be.Delete(flake)
+			err := be.Delete(flake, ctx)
 			if err != nil {
 				logrus.Debug("Deletion on backend failed, aborting")
 				tx.Rollback()
@@ -173,7 +176,7 @@ func (i *BuntDBIndex) checkAndClearFlake(flake string, be types.Backend) error {
 	})
 }
 
-func (i *BuntDBIndex) Collect(be types.Backend) error {
+func (i *BuntDBIndex) Collect(be types.Backend, ctx context.Context) error {
 	return i.db.Update(func(tx *buntdb.Tx) error {
 		//tx.AscendLessThan("index-file-deleteat")
 		return nil
