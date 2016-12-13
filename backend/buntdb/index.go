@@ -10,6 +10,7 @@ import (
 
 	"strconv"
 
+	"git.timschuster.info/rls.moe/catgi/logger"
 	"git.timschuster.info/rls.moe/catgi/snowflakes"
 	"github.com/Sirupsen/logrus"
 	"github.com/tidwall/buntdb"
@@ -51,6 +52,7 @@ func (i *BuntDBIndex) Get(r types.File, b types.Backend, ctx context.Context) (b
 }
 
 func (i *BuntDBIndex) Put(r types.File, b types.Backend, ctx context.Context) (bool, *types.File, error) {
+	log := logger.LogFromCtx("buntdb-index.Put", ctx)
 	var file = &types.File{}
 
 	// Safely Copy the struct data to the file
@@ -60,18 +62,18 @@ func (i *BuntDBIndex) Put(r types.File, b types.Backend, ctx context.Context) (b
 
 	file.DeleteAt = r.DeleteAt
 
-	logrus.Debug("Determining File.DeleteAt...")
+	log.Debug("Determining File.DeleteAt...")
 	if file.DeleteAt.Unix() == 0 {
-		logrus.Debug("Using default TTL")
 		file.DeleteAt = time.Now().UTC().Add(types.DefaultTTL)
+		log.Debug("Using default TTL: ", file.DeleteAt)
 	} else if file.DeleteAt.Sub(time.Now().UTC()) > types.MaxTTL {
-		logrus.Debug("Using max TTL")
 		file.DeleteAt = time.Now().UTC().Add(types.MaxTTL)
+		log.Debug("Using max TTL: ", file.DeleteAt)
 	} else if file.DeleteAt.Sub(time.Now().UTC()) < types.MinTTL {
-		logrus.Debug("Using min TTL")
 		file.DeleteAt = time.Now().UTC().Add(types.MinTTL)
+		log.Debug("Using min TTL: ", file.DeleteAt)
 	} else {
-		logrus.Debug("TTL: %fh", file.DeleteAt.Sub(time.Now().UTC()).Hours())
+		log.Debug("TTL: %fh", file.DeleteAt.Sub(time.Now().UTC()).Hours())
 	}
 
 	flake, err := snowflakes.NewSnowflake()

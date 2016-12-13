@@ -30,24 +30,20 @@ type Backend interface {
 	// cannot be delete now but only later, it *must* still return an error
 	Delete(name string, ctx context.Context) error
 
-	// LoadIndex will load any stored index data from the backend and
-	// replace the index with that. It will utilize the Unserialize() function
-	// of the Index for this
-	// If no index is found, the index itself is not modified.
-	LoadIndex(Index, context.Context) error
-	// StoreIndex uses the Index.Serialize() function to store the index
-	// inside the backend
-	StoreIndex(Index, context.Context) error
-
 	// ListGlob returns a list of all files that match the glob string.
 	// If context is not nil, the list is not complete and another query
 	// needs to be made, if the context is nil, no further queries are
 	// required. Backends can use this to effectively prevent rate-limits
 	// and load data more efficiently
-	// ListGlob MUST NOT list any files not created through Upload
+	// ListGlob MUST NOT list any files not created through Upload but also
+	// is NOT REQUIRED to list only files created through Upload.
 	ListGlob(
 		glob string, ictx context.Context) (
 		files []*File, octx context.Context, err error)
+
+	// CleanUp removes expired and incomplete data from the backend
+	// if this is necessary or possible.
+	CleanUp(ctx context.Context) error
 }
 
 // Index provides an interface to turn a HTTP Request into a snowflake id
@@ -100,12 +96,12 @@ type File struct {
 	// CreatedAt is the creation time of the file
 	CreatedAt time.Time `json:"created_at"`
 	// Public marks if the file is public or not
-	Public bool `json:"public"`
+	Public bool `json:"public,omitempty"`
 	// Data is the raw binary data of the file
-	Data []byte `json:"data"`
+	Data []byte `json:"data,omitempty"`
 	// DeleteAt  is the expiry date of a file
 	DeleteAt time.Time `json:"delete_at"`
-	// Flake is the Name of the File
+	// Flake is a unique identifier for the file
 	Flake string `json:"-"`
 }
 
@@ -118,10 +114,34 @@ const MaxTTL = time.Hour * 24 * 30
 // MinTTL is the minimum Lifetime of an Object
 const MinTTL = time.Hour * 1
 
+// SkipSize marks how many characters should be grouped when
+// splitting filenames. If filenames aren't split, this can be
+// ignored.
+const SkipSize = 2
+
+// ErrorFileNotExist is returned when a requested file does not
+// exist. Non-fatal when returned from backend.Exists().
+type ErrorFileNotExist struct {
+	Object     string
+	InnerError error
+}
+
+func (e ErrorFileNotExist) Error() string {
+	return "ErrFileNotExist(" + e.Object + "): " + e.InnerError.Error()
+}
+
+// NewErrorFileNotExists returns a ErrFileNotExist typed error.
+func NewErrorFileNotExists(name string, err error) error {
+	if err == nil {
+		err = errors.New("generic file not exist")
+	}
+	return ErrorFileNotExist{
+		Object:     name,
+		InnerError: err,
+	}
+}
+
 var (
-	// ErrorFileNotExist is returned when a requested file does not
-	// exist. Non-fatal when returned from backend.Exists().
-	ErrorFileNotExist = errors.New("File does not exist")
 	// ErrorIndexNoSerialize is returned by index.Serialize() or index.Unserialize() when they
 	// are not to be stored in the backend
 	ErrorIndexNoSerialize = errors.New("Do not serialize this index")

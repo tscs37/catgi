@@ -3,6 +3,8 @@ package main
 import (
 	"time"
 
+	"net/http"
+
 	"git.timschuster.info/rls.moe/catgi/backend"
 	_ "git.timschuster.info/rls.moe/catgi/backend/b2"
 	_ "git.timschuster.info/rls.moe/catgi/backend/buntdb"
@@ -14,7 +16,7 @@ import (
 
 func main() {
 	ctx := logger.NewLoggingContext()
-	logger.SetLoggingLevel("debug", ctx)
+	logger.SetLoggingLevel("info", ctx)
 
 	log := logger.LogFromCtx("main", ctx)
 
@@ -35,17 +37,11 @@ func main() {
 	}
 	log.Infof("Loaded '%s' Index Driver", idx.Name())
 
-	log.Info("Loading index")
-	err = be.LoadIndex(idx, ctx)
-	if err != nil {
-		log.Errorf("Error: %s", err)
-	}
-
 	log.Info("Storing Hello World")
 	_, f, err := idx.Put(types.File{
 		Data:     []byte("Hello World"),
 		Public:   true,
-		DeleteAt: time.Unix(0, 0),
+		DeleteAt: time.Now().UTC().Add(1 * time.Hour),
 	}, be, ctx)
 	if err != nil {
 		log.Errorf("Error: %s", err)
@@ -59,11 +55,14 @@ func main() {
 	if err != nil {
 		log.Infof("Result: %s", err)
 	}
+
+	log.Infof("Checking if doesnotexist exits :3")
 	err = be.Exists("doesnotexist", ctx)
 	if err != nil {
 		log.Infof("Result: %s", err)
 	}
 
+	log.Infof("Retrieving file")
 	_, f, err = idx.Get(types.File{
 		Flake: f.Flake,
 	}, be, ctx)
@@ -71,10 +70,16 @@ func main() {
 		logrus.Errorf("Error: %s", err)
 		return
 	}
-	log.WithField("file", "/"+f.Flake+"/").Infof("File contains %s'", f.Data)
+	log.WithField("file", "/"+f.Flake+"/").Infof("File contains '%s'", f.Data)
 
-	err = be.StoreIndex(idx, ctx)
+	log.Infof("Cleaning up bucket")
+	err = be.CleanUp(ctx)
 	if err != nil {
-		log.Error("Error on store: %s", err)
+		logrus.Errorf("Error: %s", err)
+		return
 	}
+}
+
+func serveGet(w http.ResponseWriter, r *http.Request) {
+
 }

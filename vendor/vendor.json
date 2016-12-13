@@ -3,10 +3,6 @@
 	"ignore": "test",
 	"package": [
 		{
-			"path": "-v",
-			"revision": ""
-		},
-		{
 			"path": "git.timschuster.info/rls.moe/catgi/backend",
 			"revision": ""
 		},
@@ -35,6 +31,12 @@
 			"revision": ""
 		},
 		{
+			"checksumSHA1": "VAhnoYns5+nMj3JIvCgt/4e282o=",
+			"path": "github.com/InVisionApp/rye",
+			"revision": "fa5dc681811bf7ae69eecc7f212b15aa9a5b1022",
+			"revisionTime": "2016-12-08T14:51:35Z"
+		},
+		{
 			"checksumSHA1": "2avCvSn0XonfApKKuTMyiQmk7s0=",
 			"path": "github.com/Sirupsen/logrus",
 			"revision": "3ec0642a7fb6488f65b06f9040adc67e3990296a",
@@ -45,6 +47,18 @@
 			"path": "github.com/bwmarrin/snowflake",
 			"revision": "34b33bf22ac0c98266031bcb193e2c9a621730f8",
 			"revisionTime": "2016-12-04T14:16:30Z"
+		},
+		{
+			"checksumSHA1": "FATk9pHT5TZKkoXqCoaQjeNVhnU=",
+			"path": "github.com/cactus/go-statsd-client/statsd",
+			"revision": "d8eabe07bc70ff9ba6a56836cde99d1ea3d005f7",
+			"revisionTime": "2016-10-31T21:59:49Z"
+		},
+		{
+			"checksumSHA1": "2Fy1Y6Z3lRRX1891WF/+HT4XS2I=",
+			"path": "github.com/dgrijalva/jwt-go",
+			"revision": "9ed569b5d1ac936e6494082958d63a6aa4fff99a",
+			"revisionTime": "2016-11-01T19:39:35Z"
 		},
 		{
 			"checksumSHA1": "HmbftipkadrLlCfzzVQ+iFHbl6g=",

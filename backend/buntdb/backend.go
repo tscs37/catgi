@@ -76,31 +76,12 @@ func (b *BuntDBBackend) Delete(name string, ctx context.Context) error {
 	})
 }
 
-func (b *BuntDBBackend) LoadIndex(i types.Index, ctx context.Context) error {
-	return b.db.View(func(tx *buntdb.Tx) error {
-		dat, err := tx.Get("/index/")
-		if err != nil {
-			return err
-		}
-		return i.Unserialize([]byte(dat), ctx)
-	})
-}
-
-func (b *BuntDBBackend) StoreIndex(i types.Index, ctx context.Context) error {
-	return b.db.Update(func(tx *buntdb.Tx) error {
-		dat, err := i.Serialize(ctx)
-		if err != nil {
-			return err
-		}
-		_, _, err = tx.Set("/index/", string(dat), &buntdb.SetOptions{
-			Expires: false,
-		})
-		return err
-	})
-}
-
 func (b *BuntDBBackend) ListGlob(
 	glob string, ictx context.Context) (
 	[]*types.File, context.Context, error) {
 	return nil, nil, nil
+}
+
+func (b *BuntDBBackend) CleanUp(ctx context.Context) error {
+	return nil
 }
