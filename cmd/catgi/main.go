@@ -1,17 +1,21 @@
 package main
 
 import (
-	"time"
+	"fmt"
 
 	"net/http"
 
 	"git.timschuster.info/rls.moe/catgi/backend"
 	_ "git.timschuster.info/rls.moe/catgi/backend/b2"
 	_ "git.timschuster.info/rls.moe/catgi/backend/buntdb"
-	"git.timschuster.info/rls.moe/catgi/backend/types"
 	"git.timschuster.info/rls.moe/catgi/config"
 	"git.timschuster.info/rls.moe/catgi/logger"
-	"github.com/Sirupsen/logrus"
+	"github.com/InVisionApp/rye"
+	"github.com/gorilla/mux"
+)
+
+var (
+	curBe backend.Backend
 )
 
 func main() {
@@ -28,58 +32,29 @@ func main() {
 		log.Errorf("Error: %s", err)
 		return
 	}
+	curBe = be
 	log.Infof("Loaded '%s' Backend Driver", be.Name())
-	log.Info("Starting Index")
-	idx, err := backend.NewIndex(conf.Index.Name, conf.Index.Params, ctx)
-	if err != nil {
-		log.Errorf("Error: %s", err)
-		return
-	}
-	log.Infof("Loaded '%s' Index Driver", idx.Name())
+	mwHandler := rye.NewMWHandler(rye.Config{})
 
-	log.Info("Storing Hello World")
-	_, f, err := idx.Put(types.File{
-		Data:     []byte("Hello World"),
-		Public:   true,
-		DeleteAt: time.Now().UTC().Add(1 * time.Hour),
-	}, be, ctx)
-	if err != nil {
-		log.Errorf("Error: %s", err)
-		return
-	}
-	log.Infof("Stored at /%s/", f.Flake)
+	router := mux.NewRouter()
+	router.Handle("/", mwHandler.Handle([]rye.Handler{
+		serveGet,
+	})).Methods("GET", "POST")
 
-	log.Infof("Checking if file exists")
+	http.ListenAndServe("[::1]:8080", router)
+}
 
-	err = be.Exists(f.Flake, ctx)
-	if err != nil {
-		log.Infof("Result: %s", err)
-	}
-
-	log.Infof("Checking if doesnotexist exits :3")
-	err = be.Exists("doesnotexist", ctx)
-	if err != nil {
-		log.Infof("Result: %s", err)
-	}
-
-	log.Infof("Retrieving file")
-	_, f, err = idx.Get(types.File{
-		Flake: f.Flake,
-	}, be, ctx)
-	if err != nil {
-		logrus.Errorf("Error: %s", err)
-		return
-	}
-	log.WithField("file", "/"+f.Flake+"/").Infof("File contains '%s'", f.Data)
-
-	log.Infof("Cleaning up bucket")
-	err = be.CleanUp(ctx)
-	if err != nil {
-		logrus.Errorf("Error: %s", err)
-		return
+func injectLogToRequest(_ http.Response, r *http.Request) *rye.Response {
+	return &rye.Response{
+		Context: logger.InjectLogToContext(r.Context()),
 	}
 }
 
-func serveGet(w http.ResponseWriter, r *http.Request) {
+func serveGet(rw http.ResponseWriter, r *http.Request) *rye.Response {
+	log := logger.LogFromCtx("httpRequest", r.Context())
 
+	fmt.Fprint(rw, "Hi")
+	log.Info("HI!")
+	curBe.Get("test", r.Context())
+	return nil
 }

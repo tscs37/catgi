@@ -8,11 +8,12 @@ import (
 	"git.timschuster.info/rls.moe/catgi/backend/types"
 )
 
+// Backend Type Alias for easier importing
+type Backend types.Backend
+
 type driverCreator func(map[string]interface{}, context.Context) (types.Backend, error)
-type indexCreator func(map[string]interface{}, context.Context) (types.Index, error)
 
 var backendDrivers = map[string]driverCreator{}
-var indexDrivers = map[string]indexCreator{}
 
 type noDriverError struct {
 	drvName string
@@ -34,20 +35,10 @@ func NewBackend(
 	return nil, newNoDriverError(driver)
 }
 
-func NewIndex(driver string, params map[string]interface{}, ctx context.Context) (types.Index, error) {
-	if f, ok := indexDrivers[driver]; ok {
-		return f(params, ctx)
-	}
-	return nil, newNoDriverError(driver)
-}
-
 func InstalledDrivers() []string {
 	var list = []string{}
 	for v := range backendDrivers {
-		list = append(list, "backend: "+v)
-	}
-	for v := range indexDrivers {
-		list = append(list, "index  : "+v)
+		list = append(list, v)
 	}
 	return list
 }
@@ -56,9 +47,6 @@ func NewDriver(driver string, dfunc interface{}) error {
 	switch v := dfunc.(type) {
 	case func(map[string]interface{}, context.Context) (types.Backend, error):
 		backendDrivers[driver] = v
-		return nil
-	case func(map[string]interface{}, context.Context) (types.Index, error):
-		indexDrivers[driver] = v
 		return nil
 	default:
 		return errors.New("Not a known driver type")

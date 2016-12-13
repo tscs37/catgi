@@ -46,51 +46,6 @@ type Backend interface {
 	CleanUp(ctx context.Context) error
 }
 
-// Index provides an interface to turn a HTTP Request into a snowflake id
-// for the backend and caching of request data.
-// The Index must be usuable without loading data from the backend
-// as the index data may not be loaded upon first use.
-type Index interface {
-	// Name returns the name of the current driver
-	Name() string
-
-	// Serialize returns the current index contents. Serialization is
-	// index-driver specific.
-	Serialize(context.Context) ([]byte, error)
-
-	// Unserialize parses the given byte structure into the index.
-	// Serialization is index-driver specific.
-	//
-	// Unserialize will call Clear() before loading the index, any
-	// existing index is replaced. Drivers should make an effort to
-	// do this atomically.
-	Unserialize([]byte, context.Context) error
-
-	// Get returns the file associated with the request using the provided
-	// backend. "cached"" indidcates wether the file was retrieved from
-	// cache. If "err" is set, it indicates negative caching.
-	Get(File, Backend, context.Context) (cached bool, file *File, err error)
-
-	// Put stores the content of the request into the provided backend.
-	// "cached" indicates if the put request is continuing in the background
-	// such that the file is not uploaded yet but has been put into the cache
-	Put(File, Backend, context.Context) (cached bool, file *File, err error)
-
-	// Del deletes a file from the given backend. "cached" indicates
-	// if the deletion is pending in background.
-	Del(File, Backend, context.Context) (cached bool, err error)
-
-	// Flush blocks until all cache operations are complete and blocks
-	// new cache operations until it completes.
-	Flush(context.Context) error
-
-	// Clear calls Flush and then deletes the entire cache
-	Clear(context.Context) error
-
-	// Collect cleans out expired files from the backend and cache
-	Collect(Backend, context.Context) error
-}
-
 // File contains the data of a file, if it's public and when it was created.
 type File struct {
 	// CreatedAt is the creation time of the file
