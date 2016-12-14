@@ -6,6 +6,8 @@ import (
 
 	"encoding/json"
 
+	"time"
+
 	"git.timschuster.info/rls.moe/catgi/backend"
 	_ "git.timschuster.info/rls.moe/catgi/backend/b2"
 	_ "git.timschuster.info/rls.moe/catgi/backend/buntdb"
@@ -39,15 +41,22 @@ func main() {
 	log.Infof("Loaded '%s' Backend Driver", be.Name())
 	mwHandler := rye.NewMWHandler(rye.Config{})
 
-	log.Info("Beginning Cleanup")
-
-	err = be.CleanUp(ctx)
+	flake, err := snowflakes.NewSnowflake()
 	if err != nil {
 		log.Error(err)
 		return
 	}
-
-	log.Info("Finished Cleanup")
+	err = be.Upload(flake, &types.File{
+		CreatedAt:   time.Now(),
+		Public:      true,
+		Data:        []byte("Hello World"),
+		DeleteAt:    time.Now().UTC().Add(time.Hour * 20000),
+		ContentType: "text/plain",
+	}, ctx)
+	if err != nil {
+		log.Error(err)
+		return
+	}
 
 	router := mux.NewRouter()
 	router.Handle("/file", mwHandler.Handle([]rye.Handler{
@@ -204,20 +213,15 @@ func serveGet(rw http.ResponseWriter, r *http.Request) *rye.Response {
 		}
 	}
 
-	log.Debug("Parsing data to JSON")
-	dat, err := json.Marshal(f)
+	log.Debug("Writing out response")
+
+	_, err = rw.Write(f.Data)
 	if err != nil {
-		log.Warn("Error while parsing data to json: ", err)
-		rye.WriteJSONStatus(rw, "error", err.Error(), 500)
 		return &rye.Response{
 			Err:           err,
 			StopExecution: true,
 		}
 	}
-
-	log.Debug("Writing out response")
-
-	rye.WriteJSONResponse(rw, 200, dat)
 
 	return nil
 }

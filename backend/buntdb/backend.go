@@ -79,9 +79,17 @@ func (b *BuntDBBackend) Delete(name string, ctx context.Context) error {
 func (b *BuntDBBackend) ListGlob(
 	glob string, ictx context.Context) (
 	[]*types.File, context.Context, error) {
-	return nil, nil, nil
+	return nil, nil, types.ErrorNotImplemented
 }
 
-func (b *BuntDBBackend) CleanUp(ctx context.Context) error {
-	return nil
+func (b *BuntDBBackend) Publish(_ []string, _ string, _ context.Context) error {
+	return types.ErrorNotImplemented
+}
+
+func (b *BuntDBBackend) Unpublish(_ string, _ context.Context) error {
+	return types.ErrorNotImplemented
+}
+
+func (b *BuntDBBackend) Resolve(_ string, _ context.Context) ([]string, error) {
+	return nil, types.ErrorNotImplemented
 }

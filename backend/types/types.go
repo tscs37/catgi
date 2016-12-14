@@ -30,6 +30,15 @@ type Backend interface {
 	// cannot be delete now but only later, it *must* still return an error
 	Delete(name string, ctx context.Context) error
 
+	// Publish associated a name with a flake for clearname publishing
+	// If the name is already taken, this fails
+	// A name may be associated with more than one flake
+	Publish(flake []string, name string, ctx context.Context) error
+	// Unpublish disassociates a name from any flakes it's associated with.
+	Unpublish(name string, ctx context.Context) error
+	// Resolves takes a name and returns a set of flakes for that name
+	Resolve(name string, ctx context.Context) ([]string, error)
+
 	// ListGlob returns a list of all files that match the glob string.
 	// If context is not nil, the list is not complete and another query
 	// needs to be made, if the context is nil, no further queries are
@@ -40,10 +49,6 @@ type Backend interface {
 	ListGlob(
 		glob string, ictx context.Context) (
 		files []*File, octx context.Context, err error)
-
-	// CleanUp removes expired and incomplete data from the backend
-	// if this is necessary or possible.
-	CleanUp(ctx context.Context) error
 }
 
 // File contains the data of a file, if it's public and when it was created.
@@ -99,6 +104,10 @@ func NewErrorFileNotExists(name string, err error) error {
 }
 
 var (
+	ErrorNotImplemented  = errors.New("Request without Implementation")
+	ErrorExpired         = errors.New("The requested file has expired")
+	ErrorQuotaExceeded   = errors.New("Backend aborted because a quota was exceeded")
+	ErrorIncompleteWrite = errors.New("Backend could not complete write")
 	// ErrorIndexNoSerialize is returned by index.Serialize() or index.Unserialize() when they
 	// are not to be stored in the backend
 	ErrorIndexNoSerialize = errors.New("Do not serialize this index")
