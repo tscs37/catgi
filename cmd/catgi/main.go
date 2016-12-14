@@ -174,6 +174,7 @@ func serveGet(rw http.ResponseWriter, r *http.Request) *rye.Response {
 	err := r.ParseForm()
 	if err != nil {
 		log.Warn("Form not parsed, request aborted")
+		rye.WriteJSONStatus(rw, "error", err.Error(), 500)
 		return &rye.Response{
 			Err:           err,
 			StopExecution: true,
@@ -184,8 +185,10 @@ func serveGet(rw http.ResponseWriter, r *http.Request) *rye.Response {
 	flake := r.Form.Get("flake")
 	if len(flake) == 0 {
 		log.Warn("Form contained no flake")
+		err = errors.New("Missing Flake Parameter")
+		rye.WriteJSONStatus(rw, "error", err.Error(), 500)
 		return &rye.Response{
-			Err:           errors.New("Need flake to find file"),
+			Err:           err,
 			StopExecution: true,
 		}
 	}
@@ -194,6 +197,7 @@ func serveGet(rw http.ResponseWriter, r *http.Request) *rye.Response {
 	f, err := curBe.Get(flake, r.Context())
 	if err != nil {
 		log.Warn("File error on backend: ", err)
+		rye.WriteJSONStatus(rw, "error", err.Error(), 500)
 		return &rye.Response{
 			Err:           err,
 			StopExecution: true,
@@ -204,6 +208,7 @@ func serveGet(rw http.ResponseWriter, r *http.Request) *rye.Response {
 	dat, err := json.Marshal(f)
 	if err != nil {
 		log.Warn("Error while parsing data to json: ", err)
+		rye.WriteJSONStatus(rw, "error", err.Error(), 500)
 		return &rye.Response{
 			Err:           err,
 			StopExecution: true,
