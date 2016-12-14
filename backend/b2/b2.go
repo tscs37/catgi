@@ -291,38 +291,34 @@ func (b *B2Backend) CleanUp(ctx context.Context) error {
 			return err
 		}
 		for _, obj := range objs {
-			attr, err := obj.Attrs(ctx)
-			if err != nil {
-				log.Error("Error on ", obj, ": ", err)
-			}
-			log.Debug("Found object '", attr.Name, "'")
-			isBin := strings.HasSuffix(attr.Name, "/data.bin")
-			isMeta := strings.HasSuffix(attr.Name, "/meta.json")
+			log.Debug("Found object '", obj.Name(), "'")
+			isBin := strings.HasSuffix(obj.Name(), "/data.bin")
+			isMeta := strings.HasSuffix(obj.Name(), "/meta.json")
 			if !isBin && !isMeta {
 				log.Warn("Found non-file object in bucket, deleting!")
-				if err := obj.Delete(ctx); err != nil {
+				if err = obj.Delete(ctx); err != nil {
 					log.Error("Non-Critical Error: ", err)
 				}
 			} else if isBin {
-				stripped := strings.TrimSuffix(attr.Name, "/data.bin")
+				stripped := strings.TrimSuffix(obj.Name(), "/data.bin")
 				if val, ok := compSearch[stripped+"/meta.json"]; ok {
 					if val == "data.bin" {
 						log.Debug("Found '"+stripped+"' companion: ", val)
 						delete(compSearch, stripped+"/meta.json")
 					} else {
-						log.Error("Wrong companion: ", val, " for ", attr.Name, "/", stripped)
+						log.Error("Wrong companion: ", val, " for ", obj.Name(), "/", stripped)
 					}
 				} else {
 					compSearch[stripped+"/data.bin"] = "meta.json"
 				}
 			} else if isMeta {
-				stripped := strings.TrimSuffix(attr.Name, "/meta.json")
+				stripped := strings.TrimSuffix(obj.Name(), "/meta.json")
 				if val, ok := compSearch[stripped+"/data.bin"]; ok {
 					if val == "meta.json" {
 						log.Debug("Found '"+stripped+"' companion: ", val)
 						delete(compSearch, stripped+"/data.bin")
 					} else {
-						log.Error("Wrong companion: ", val, " for ", attr.Name, "/", stripped)
+						log.Error("Wrong companion: ", val, " for ", obj.Name(), "/", stripped)
 					}
 				} else {
 					compSearch[stripped+"/meta.json"] = "data.bin"

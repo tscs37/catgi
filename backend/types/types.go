@@ -58,6 +58,8 @@ type File struct {
 	DeleteAt time.Time `json:"delete_at"`
 	// Flake is a unique identifier for the file
 	Flake string `json:"-"`
+	// Content Type sets the Mime Header
+	ContentType string `json:"mime"`
 }
 
 // DefaultTTL is the default Time-to-Live of new Objects
