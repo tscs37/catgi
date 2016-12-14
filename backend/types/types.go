@@ -76,6 +76,9 @@ const MaxTTL = time.Hour * 24 * 30
 // MinTTL is the minimum Lifetime of an Object
 const MinTTL = time.Hour * 1
 
+// MaxDataSize is the maximum size of a file
+const MaxDataSize = 25 * 1024 * 1024
+
 // SkipSize marks how many characters should be grouped when
 // splitting filenames. If filenames aren't split, this can be
 // ignored.
@@ -88,6 +91,7 @@ type ErrorFileNotExist struct {
 	InnerError error
 }
 
+// Error returns a nested Error Message regarding a missing file
 func (e ErrorFileNotExist) Error() string {
 	return "ErrFileNotExist(" + e.Object + "): " + e.InnerError.Error()
 }
@@ -104,9 +108,19 @@ func NewErrorFileNotExists(name string, err error) error {
 }
 
 var (
-	ErrorNotImplemented  = errors.New("Request without Implementation")
-	ErrorExpired         = errors.New("The requested file has expired")
-	ErrorQuotaExceeded   = errors.New("Backend aborted because a quota was exceeded")
+	// ErrorNotImplemented is returned if the underlying interface has
+	// not implemented a function. The presence of ErrorNotImplemented is
+	// not acceptable for any production-ready backend.
+	ErrorNotImplemented = errors.New("Request without Implementation")
+	// ErrorExpired is returned when the file that was requested has been
+	// found but was deleted because it expired
+	ErrorExpired = errors.New("The requested file has expired")
+	// ErrorQuotaExceeded is returned when the request issued exceeded a
+	// quota in the backend, for example if a file is too large or a publish
+	// contains too many flakes.
+	ErrorQuotaExceeded = errors.New("Backend aborted because a quota was exceeded")
+	// ErrorIncompleteWrite is returned when the underlying data was not
+	// written to the backend entirely and may be in an inconsistent state.
 	ErrorIncompleteWrite = errors.New("Backend could not complete write")
 	// ErrorIndexNoSerialize is returned by index.Serialize() or index.Unserialize() when they
 	// are not to be stored in the backend

@@ -11,36 +11,59 @@ import (
 	"github.com/kurin/blazer/b2"
 )
 
+// dataName is used to store the raw binary data for a file
+// Format: "file/<flake>/public.json"
 func dataName(flake string) string { return "file/" + splitName(flake) + "/data.bin" }
 
+// metaName is used to store metainformation for a file
+// Format: "file/<flake>/meta.json"
 func metaName(flake string) string { return "file/" + splitName(flake) + "/meta.json" }
 
+// pubName is used to store public flakes for iteration
+// Format: "public/<flake>"
 func pubName(flake string) string { return "public/" + flake }
 
+// clpubName is used to store published names
+// Format: "named/<name>/flakes.json"
 func clpubName(name string) string { return "named/" + name + "/flakes.json" }
 
+// writeFile writes raw data into a specified file and logs into a context
 func (b *B2Backend) writeFile(name string, data []byte, ctx context.Context) error {
 	log := logger.LogFromCtx(packageName+".writeFile", ctx).
 		WithField("object", name).WithField("obj_len", len(data))
+	if len(data) > types.MaxDataSize {
+		log.Warn("Attempted to store way too large file.")
+		return types.ErrorQuotaExceeded
+	}
 	obj := b.dataBucket.Object(name)
 	log.Debug("Opening new Writer")
 	w := obj.NewWriter(ctx)
 	defer w.Close()
 	log.Debug("Creating new Data Buffer")
 	buf := bytes.NewBuffer(data)
-	if n, err := io.Copy(w, buf); err != nil {
+	n, err := io.Copy(w, buf)
+	if err != nil {
 		log.Error("Error while uploading: ", err)
 		return err
-	} else {
-		log.Debugf("Wrote %d bytes", n)
-		return nil
 	}
+	if n != int64(buf.Len()) {
+		log.Warn("Write size mismatch")
+		return types.ErrorIncompleteWrite
+	}
+	log.Debugf("Wrote %d bytes", n)
+	return nil
 }
 
+// deleteFile is a wrapper around b2.Bucket.Object().Delete()
 func (b *B2Backend) deleteFile(name string, ctx context.Context) error {
 	return b.dataBucket.Object(name).Delete(ctx)
 }
 
+// pingFile returns a boolean indicating wether a file exists and additionally
+// it's attributes. Otherwise it returns false and an error.
+// The attributes returned may not be null and contain data even if
+// the boolean is false. For example when a file is currently being
+// uploaded.
 func (b *B2Backend) pingFile(name string, ctx context.Context) (bool, *b2.Attrs, error) {
 	log := logger.LogFromCtx(packageName+".pingFile", ctx).
 		WithField("object", name)
@@ -57,6 +80,7 @@ func (b *B2Backend) pingFile(name string, ctx context.Context) (bool, *b2.Attrs,
 	return false, attrs, nil
 }
 
+// readFile returns the entire contents of the file or an error.
 func (b *B2Backend) readFile(name string, ctx context.Context) ([]byte, error) {
 	log := logger.LogFromCtx(packageName+".readFile", ctx).
 		WithField("object", name)
@@ -75,6 +99,20 @@ func (b *B2Backend) readFile(name string, ctx context.Context) ([]byte, error) {
 	}
 }
 
+// splitName splits a string according to the following rules:
+// 1. Create a slice of strings
+// 2. If the remaining size of the string is larger than skipSize plus 1
+//      then take the first 2 runes and append them as string to the slice
+// 3. If this is not the case, take all remaining runes and append
+//      them to the slice
+// 4. Join all slice elements with "/" inbetween.
+//
+// skipSize is by default 2
+//
+// Example:
+//
+// HelloWorld       =>      He/ll/oW/or/ld
+// HelloInternet    =>      He/ll/oI/nt/er/net
 func splitName(flakeStr string) string {
 	flake := []rune(flakeStr)
 	var out = []string{}
