@@ -90,13 +90,13 @@ func (b *B2Backend) readFile(name string, ctx context.Context) ([]byte, error) {
 	r := obj.NewReader(ctx)
 
 	buffer := bytes.NewBuffer([]byte{})
-	if n, err := io.Copy(buffer, r); err != nil {
+	n, err := io.Copy(buffer, r)
+	if err != nil {
 		log.Error("Error while reading: ", err)
 		return nil, err
-	} else {
-		log.Debugf("Read %d bytes", n)
-		return buffer.Bytes(), nil
 	}
+	log.Debugf("Read %d bytes", n)
+	return buffer.Bytes(), nil
 }
 
 // splitName splits a string according to the following rules:
