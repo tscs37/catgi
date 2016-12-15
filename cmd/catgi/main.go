@@ -217,6 +217,7 @@ func serveGet(rw http.ResponseWriter, r *http.Request) *rye.Response {
 
 	_, err = rw.Write(f.Data)
 	if err != nil {
+		log.Errorf("Error on store: %s", err)
 		return &rye.Response{
 			Err:           err,
 			StopExecution: true,
