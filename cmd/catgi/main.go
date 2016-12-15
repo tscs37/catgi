@@ -2,12 +2,15 @@ package main
 
 import (
 	"errors"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	"encoding/json"
 
-	"time"
+	"mime"
 
+	"bitbucket.org/taruti/mimemagic"
 	"git.timschuster.info/rls.moe/catgi/backend"
 	_ "git.timschuster.info/rls.moe/catgi/backend/b2"
 	_ "git.timschuster.info/rls.moe/catgi/backend/buntdb"
@@ -17,6 +20,7 @@ import (
 	"git.timschuster.info/rls.moe/catgi/snowflakes"
 	"github.com/InVisionApp/rye"
 	"github.com/gorilla/mux"
+	"github.com/speps/go-hashids"
 )
 
 var (
@@ -25,7 +29,7 @@ var (
 
 func main() {
 	ctx := logger.NewLoggingContext()
-	logger.SetLoggingLevel("info", ctx)
+	logger.SetLoggingLevel("debug", ctx)
 
 	log := logger.LogFromCtx("main", ctx)
 
@@ -41,22 +45,11 @@ func main() {
 	log.Infof("Loaded '%s' Backend Driver", be.Name())
 	mwHandler := rye.NewMWHandler(rye.Config{})
 
-	flake, err := snowflakes.NewSnowflake()
-	if err != nil {
-		log.Error(err)
-		return
-	}
-	err = be.Upload(flake, &types.File{
-		CreatedAt:   time.Now(),
-		Public:      true,
-		Data:        []byte("Hello World"),
-		DeleteAt:    time.Now().UTC().Add(time.Hour * 20000),
-		ContentType: "text/plain",
-	}, ctx)
-	if err != nil {
-		log.Error(err)
-		return
-	}
+	h := hashids.NewData()
+	h.MinLength = 1
+	h.Salt = "catgi.rls.moe"
+	hd := hashids.NewWithData(h)
+	fmt.Printf("%s\n", hd.Decode("Zo8KDWGBzkKbQ"))
 
 	router := mux.NewRouter()
 	router.Handle("/file", mwHandler.Handle([]rye.Handler{
@@ -83,6 +76,8 @@ func main() {
 		injectLogToRequest,
 		serveAuth,
 	}))
+
+	log.Info("Starting HTTP Service")
 
 	http.ListenAndServe("[::1]:8080", router)
 }
@@ -119,21 +114,22 @@ func servePost(rw http.ResponseWriter, r *http.Request) *rye.Response {
 	}
 	log.Debug("Request Snowflake is ", flake)
 
-	log.Debug("Parsing Form")
+	dat, err := ioutil.ReadAll(r.Body)
 	err = r.ParseForm()
 	if err != nil {
-		log.Warn("Form not parse, request aborted")
+		log.Warn("Could not read form")
 		return &rye.Response{
 			Err:           err,
 			StopExecution: true,
 		}
 	}
 
-	dat := r.PostForm.Get("file")
 	var file types.File
 	err = json.Unmarshal([]byte(dat), &file)
 	if err != nil {
-		log.Warn("Could not parse incoming file")
+		log.Warn("Could not parse incoming file: ", err)
+		rw.WriteHeader(500)
+		rw.Write([]byte(dat))
 		return &rye.Response{
 			Err:           err,
 			StopExecution: true,
@@ -215,6 +211,31 @@ func serveGet(rw http.ResponseWriter, r *http.Request) *rye.Response {
 
 	log.Debug("Writing out response")
 
+	mimetype := ""
+
+	if f.ContentType == "" {
+		if len(f.Data) > 1024 {
+			mimetype = mimemagic.Match("image/png", f.Data[:1024])
+		} else {
+			mimetype = mimemagic.Match("image/png", f.Data)
+		}
+	} else {
+		mimetype = f.ContentType
+	}
+
+	ext := ""
+
+	{
+		exts, err := mime.ExtensionsByType(mimetype)
+		if err != nil || len(exts) < 1 {
+			log.Warn("MIMEType without extension")
+		} else {
+			ext = exts[0]
+		}
+	}
+
+	rw.Header().Add("Content-Disposition", "inline; filename="+f.Flake+ext)
+	rw.Header().Add("Content-Type", mimetype)
 	_, err = rw.Write(f.Data)
 	if err != nil {
 		log.Errorf("Error on store: %s", err)

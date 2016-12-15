@@ -86,7 +86,7 @@ func (b *B2Backend) Get(flake string, ctx context.Context) (*types.File, error) 
 			return nil, err
 		}
 		log.Debug("Checking Expiry Data: ", file.DeleteAt.Sub(time.Now().UTC()))
-		if time.Now().UTC().After(file.DeleteAt) {
+		if time.Now().UTC().After(file.DeleteAt.Time) {
 			log.Debug("Expired, deleting")
 			err = b.deleteFile(metaName, ctx)
 			if err != nil {

@@ -46,10 +46,6 @@ func (b *B2Backend) writeFile(name string, data []byte, ctx context.Context) err
 		log.Error("Error while uploading: ", err)
 		return err
 	}
-	if n != int64(buf.Len()) {
-		log.Warn("Write size mismatch")
-		return types.ErrorIncompleteWrite
-	}
 	log.Debugf("Wrote %d bytes", n)
 	return nil
 }

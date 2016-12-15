@@ -3,6 +3,7 @@ package types
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -54,15 +55,15 @@ type Backend interface {
 // File contains the data of a file, if it's public and when it was created.
 type File struct {
 	// CreatedAt is the creation time of the file
-	CreatedAt time.Time `json:"created_at"`
+	CreatedAt *DateOnlyTime `json:"created_at"`
 	// Public marks if the file is public or not
 	Public bool `json:"public,omitempty"`
 	// Data is the raw binary data of the file
 	Data []byte `json:"data,omitempty"`
 	// DeleteAt  is the expiry date of a file
-	DeleteAt time.Time `json:"delete_at"`
+	DeleteAt *DateOnlyTime `json:"delete_at"`
 	// Flake is a unique identifier for the file
-	Flake string `json:"-"`
+	Flake string `json:"name"`
 	// Content Type sets the Mime Header
 	ContentType string `json:"mime"`
 }
@@ -126,3 +127,34 @@ var (
 	// are not to be stored in the backend
 	ErrorIndexNoSerialize = errors.New("Do not serialize this index")
 )
+
+type DateOnlyTime struct {
+	time.Time
+}
+
+func (dot *DateOnlyTime) UnmarshalJSON(b []byte) (err error) {
+	s := string(b)
+	if len(s) == 2 {
+		return errors.New("Cannot parse empty date")
+	}
+	s = s[1 : len(s)-1]
+
+	t, err := time.Parse("2006-01-02", s)
+	if err != nil {
+		return err
+	}
+	dot.Time = t
+	return nil
+}
+
+func (dot *DateOnlyTime) MarshalJSON() ([]byte, error) {
+	s := dot.Format("2006-01-02")
+	s = fmt.Sprintf("\"%s\"", s)
+	return []byte(s), nil
+}
+
+func FromTime(t time.Time) *DateOnlyTime {
+	return &DateOnlyTime{
+		Time: t,
+	}
+}
