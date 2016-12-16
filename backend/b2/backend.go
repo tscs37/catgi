@@ -21,6 +21,7 @@ func (b *B2Backend) Name() string { return driverName }
 func (b *B2Backend) Upload(flake string, file *types.File, ctx context.Context) error {
 	log := logger.LogFromCtx(packageName+".Upload", ctx)
 	log.Debug("Creating object '", flake, "'")
+	file.CreatedAt = types.FromTime(time.Now().UTC())
 	log.Debug("Writing File Data")
 	dataName := dataName(flake)
 	metaName := metaName(flake)
@@ -30,9 +31,8 @@ func (b *B2Backend) Upload(flake string, file *types.File, ctx context.Context) 
 		return err
 	}
 	log.Debug("Marshalling for ", metaName)
-	metaFile := *file
-	metaFile.Data = []byte{}
-	dat, err := json.Marshal(metaFile)
+	file.Data = []byte{}
+	dat, err := json.Marshal(file)
 	if err != nil {
 		return err
 	}

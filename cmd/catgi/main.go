@@ -6,9 +6,9 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"encoding/json"
-
 	"mime"
+
+	"path/filepath"
 
 	"bitbucket.org/taruti/mimemagic"
 	"git.timschuster.info/rls.moe/catgi/backend"
@@ -97,6 +97,18 @@ func serveLogin(rw http.ResponseWriter, r *http.Request) *rye.Response {
 }
 
 func serveSite(rw http.ResponseWriter, r *http.Request) *rye.Response {
+	log := logger.LogFromCtx("postFile", r.Context())
+	dat, err := ioutil.ReadFile("./index.html")
+	if err != nil {
+		log.Error("Could not load file from disk: ", err)
+		return &rye.Response{
+			Err:           err,
+			StopExecution: true,
+		}
+	}
+	rw.WriteHeader(200)
+	rw.Header().Add("Content-Type", "application/html")
+	rw.Write(dat)
 	return nil
 }
 
@@ -114,8 +126,7 @@ func servePost(rw http.ResponseWriter, r *http.Request) *rye.Response {
 	}
 	log.Debug("Request Snowflake is ", flake)
 
-	dat, err := ioutil.ReadAll(r.Body)
-	err = r.ParseForm()
+	err = r.ParseMultipartForm(25 * 1024 * 1024)
 	if err != nil {
 		log.Warn("Could not read form")
 		return &rye.Response{
@@ -125,16 +136,34 @@ func servePost(rw http.ResponseWriter, r *http.Request) *rye.Response {
 	}
 
 	var file types.File
-	err = json.Unmarshal([]byte(dat), &file)
+	httpFile, hdr, err := r.FormFile("data")
 	if err != nil {
-		log.Warn("Could not parse incoming file: ", err)
-		rw.WriteHeader(500)
-		rw.Write([]byte(dat))
+		log.Warn("Could not read form file")
 		return &rye.Response{
 			Err:           err,
 			StopExecution: true,
 		}
 	}
+	fileData, err := ioutil.ReadAll(httpFile)
+	if err != nil {
+		log.Warn("Could not read form file")
+		return &rye.Response{
+			Err:           err,
+			StopExecution: true,
+		}
+	}
+	file.Data = fileData
+	log.Infof("Read %d bytes of a file", len(file.Data))
+	dAt, err := types.FromString(r.Form.Get("delete_at"))
+	if err != nil {
+		log.Warn("Could not read delete time: ", err)
+		return &rye.Response{
+			Err:           err,
+			StopExecution: true,
+		}
+	}
+	file.DeleteAt = dAt
+	file.FileExtension = filepath.Ext(hdr.Filename)
 	file.ContentType = http.DetectContentType(file.Data)
 	file.Flake = flake
 
@@ -150,23 +179,8 @@ func servePost(rw http.ResponseWriter, r *http.Request) *rye.Response {
 		}
 	}
 
-	// Clean file part and return and (empty) file JSON document
-	file.Data = []byte{}
-
 	{
-		log.Debug("Parsing data to JSON")
-		dat, err := json.Marshal(file)
-		if err != nil {
-			log.Warn("Error while parsing data to json: ", err)
-			return &rye.Response{
-				Err:           err,
-				StopExecution: true,
-			}
-		}
-
-		log.Debug("Writing out response")
-
-		rye.WriteJSONResponse(rw, 200, dat)
+		http.Redirect(rw, r, "/file?flake="+file.Flake, 302)
 
 		return nil
 	}

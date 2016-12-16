@@ -66,6 +66,8 @@ type File struct {
 	Flake string `json:"name"`
 	// Content Type sets the Mime Header
 	ContentType string `json:"mime"`
+	// If this is not empty, use this extension for downloads.
+	FileExtension string `json:"ext,omitempty"`
 }
 
 // DefaultTTL is the default Time-to-Live of new Objects
@@ -157,4 +159,12 @@ func FromTime(t time.Time) *DateOnlyTime {
 	return &DateOnlyTime{
 		Time: t,
 	}
+}
+
+func FromString(s string) (*DateOnlyTime, error) {
+	t, err := time.Parse("2006-01-02", s)
+	if err != nil {
+		return nil, err
+	}
+	return FromTime(t), nil
 }
