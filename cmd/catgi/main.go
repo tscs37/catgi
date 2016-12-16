@@ -283,7 +283,7 @@ func serveGet(rw http.ResponseWriter, r *http.Request) *rye.Response {
 		}
 	}
 
-	rw.Header().Add("Content-Disposition", "inline; filename="+f.Ext)
+	rw.Header().Add("Content-Disposition", "inline; filename="+f.FileExtension)
 	rw.Header().Add("Content-Type", mimetype)
 	_, err = rw.Write(f.Data)
 	if err != nil {
