@@ -7,8 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"mime"
-
 	"path/filepath"
 
 	"bitbucket.org/taruti/mimemagic"
@@ -270,17 +268,6 @@ func serveGet(rw http.ResponseWriter, r *http.Request) *rye.Response {
 		}
 	} else {
 		mimetype = f.ContentType
-	}
-
-	ext := ""
-
-	{
-		exts, err := mime.ExtensionsByType(mimetype)
-		if err != nil || len(exts) < 1 {
-			log.Warn("MIMEType without extension")
-		} else {
-			ext = exts[0]
-		}
 	}
 
 	rw.Header().Add("Content-Disposition", "inline; filename="+f.FileExtension)
