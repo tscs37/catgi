@@ -31,6 +31,7 @@ func (b *B2Backend) Upload(flake string, file *types.File, ctx context.Context) 
 		return err
 	}
 	log.Debug("Marshalling for ", metaName)
+	oldData := file.Data
 	file.Data = []byte{}
 	dat, err := json.Marshal(file)
 	if err != nil {
@@ -41,6 +42,7 @@ func (b *B2Backend) Upload(flake string, file *types.File, ctx context.Context) 
 		log.Error("Error writing data ", err)
 		return err
 	}
+	file.Data = oldData
 	return nil
 }
 

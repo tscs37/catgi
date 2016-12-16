@@ -48,6 +48,12 @@
 			"revisionTime": "2016-08-29T20:23:21Z"
 		},
 		{
+			"checksumSHA1": "h/y88wOmQRm6qE29txL9LndV1yY=",
+			"path": "github.com/bluele/gcache",
+			"revision": "d920a928be099e4b9a6272f41699f4693cdcee5b",
+			"revisionTime": "2016-12-12T14:19:04Z"
+		},
+		{
 			"checksumSHA1": "uJ0YQC7eex2kIBW9STFbv/Fb918=",
 			"path": "github.com/bwmarrin/snowflake",
 			"revision": "34b33bf22ac0c98266031bcb193e2c9a621730f8",
@@ -198,10 +204,10 @@
 			"revisionTime": "2016-12-15T13:43:59Z"
 		},
 		{
-			"checksumSHA1": "9C4Av3ypK5pi173F76ogJT/d8x4=",
+			"checksumSHA1": "VE+WBfxeMNC5a98uLXK2Iu80hOU=",
 			"path": "golang.org/x/crypto/ssh/terminal",
-			"revision": "c367d6eeb7c6158125f2f47e049f7eb7e251c09a",
-			"revisionTime": "2016-10-18T21:00:36Z"
+			"revision": "01be46f62051d02cb6a36c9b47b37b24e5758c81",
+			"revisionTime": "2016-12-15T13:43:59Z"
 		},
 		{
 			"checksumSHA1": "9jjO5GjLa0XF/nfWihF02RoH4qc=",
@@ -216,11 +222,11 @@
 			"revisionTime": "2016-11-30T01:20:33Z"
 		},
 		{
-			"checksumSHA1": "Mk0HzIHe8LoPSTkLvGLAvwUtUcQ=",
+			"checksumSHA1": "uTQtOqR0ePMMcvuvAIksiIZxhqU=",
 			"origin": "github.com/Sirupsen/logrus/vendor/golang.org/x/sys/unix",
 			"path": "golang.org/x/sys/unix",
-			"revision": "3ec0642a7fb6488f65b06f9040adc67e3990296a",
-			"revisionTime": "2016-08-29T20:23:21Z"
+			"revision": "d75a52659825e75fff6158388dddc6a5b04f9ba5",
+			"revisionTime": "2016-12-14T18:38:57Z"
 		},
 		{
 			"checksumSHA1": "Mr4ur60bgQJnQFfJY0dGtwWwMPE=",

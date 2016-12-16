@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -13,6 +12,7 @@ import (
 	"git.timschuster.info/rls.moe/catgi/backend"
 	_ "git.timschuster.info/rls.moe/catgi/backend/b2"
 	_ "git.timschuster.info/rls.moe/catgi/backend/buntdb"
+	_ "git.timschuster.info/rls.moe/catgi/backend/fcache"
 	"git.timschuster.info/rls.moe/catgi/backend/types"
 	"git.timschuster.info/rls.moe/catgi/config"
 	"git.timschuster.info/rls.moe/catgi/logger"
@@ -20,7 +20,6 @@ import (
 	"github.com/InVisionApp/rye"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
-	"github.com/speps/go-hashids"
 )
 
 var (
@@ -37,7 +36,7 @@ func main() {
 	curCfg, err := config.LoadConfig("./conf.json")
 
 	log.Info("Starting Backend")
-	be, err := backend.NewBackend(conf.Backend.Name, conf.Backend.Params, ctx)
+	be, err := backend.NewBackend(curCfg.Backend.Name, curCfg.Backend.Params, ctx)
 	if err != nil {
 		log.Errorf("Error: %s", err)
 		return
@@ -45,12 +44,6 @@ func main() {
 	curBe = be
 	log.Infof("Loaded '%s' Backend Driver", be.Name())
 	mwHandler := rye.NewMWHandler(rye.Config{})
-
-	h := hashids.NewData()
-	h.MinLength = 1
-	h.Salt = "catgi.rls.moe"
-	hd := hashids.NewWithData(h)
-	fmt.Printf("%s\n", hd.Decode("Zo8KDWGBzkKbQ"))
 
 	router := mux.NewRouter()
 	router.Handle("/file", mwHandler.Handle([]rye.Handler{
@@ -109,6 +102,8 @@ func serveAuth(rw http.ResponseWriter, r *http.Request) *rye.Response {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, claims)
 
 	tokenString, err := token.SignedString(curCfg.HMACKey)
+
+	rw.Write([]byte(tokenString))
 
 	return nil
 }
@@ -270,7 +265,7 @@ func serveGet(rw http.ResponseWriter, r *http.Request) *rye.Response {
 		mimetype = f.ContentType
 	}
 
-	rw.Header().Add("Content-Disposition", "inline; filename="+f.FileExtension)
+	rw.Header().Add("Content-Disposition", "inline; filename="+flake+f.FileExtension)
 	rw.Header().Add("Content-Type", mimetype)
 	_, err = rw.Write(f.Data)
 	if err != nil {
