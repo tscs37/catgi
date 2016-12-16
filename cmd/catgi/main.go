@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"mime"
 
@@ -19,12 +20,14 @@ import (
 	"git.timschuster.info/rls.moe/catgi/logger"
 	"git.timschuster.info/rls.moe/catgi/snowflakes"
 	"github.com/InVisionApp/rye"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 	"github.com/speps/go-hashids"
 )
 
 var (
-	curBe backend.Backend
+	curBe  backend.Backend
+	curCfg config.Configuration
 )
 
 func main() {
@@ -33,7 +36,7 @@ func main() {
 
 	log := logger.LogFromCtx("main", ctx)
 
-	conf, err := config.LoadConfig("./conf.json")
+	curCfg, err := config.LoadConfig("./conf.json")
 
 	log.Info("Starting Backend")
 	be, err := backend.NewBackend(conf.Backend.Name, conf.Backend.Params, ctx)
@@ -89,15 +92,47 @@ func injectLogToRequest(_ http.ResponseWriter, r *http.Request) *rye.Response {
 }
 
 func serveAuth(rw http.ResponseWriter, r *http.Request) *rye.Response {
+	log := logger.LogFromCtx("postFile", r.Context())
+	claimflake, err := snowflakes.NewSnowflake()
+	if err != nil {
+		log.Warn("Could not generate claim flake: ", err)
+		return &rye.Response{
+			Err:           err,
+			StopExecution: true,
+		}
+	}
+	claims := &jwt.StandardClaims{
+		ExpiresAt: time.Now().AddDate(0, 2, 0).Unix(),
+		Issuer:    "catgi.rls.moe",
+		NotBefore: time.Now().Unix(),
+		Id:        claimflake,
+		Subject:   "login",
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS512, claims)
+
+	tokenString, err := token.SignedString(curCfg.HMACKey)
+
 	return nil
 }
 
 func serveLogin(rw http.ResponseWriter, r *http.Request) *rye.Response {
+	log := logger.LogFromCtx("serveLogin", r.Context())
+	dat, err := ioutil.ReadFile("./login.html")
+	if err != nil {
+		log.Error("Could not load file from disk: ", err)
+		return &rye.Response{
+			Err:           err,
+			StopExecution: true,
+		}
+	}
+	rw.WriteHeader(200)
+	rw.Header().Add("Content-Type", "application/html")
+	rw.Write(dat)
 	return nil
 }
 
 func serveSite(rw http.ResponseWriter, r *http.Request) *rye.Response {
-	log := logger.LogFromCtx("postFile", r.Context())
+	log := logger.LogFromCtx("serverIndex", r.Context())
 	dat, err := ioutil.ReadFile("./index.html")
 	if err != nil {
 		log.Error("Could not load file from disk: ", err)
@@ -248,7 +283,7 @@ func serveGet(rw http.ResponseWriter, r *http.Request) *rye.Response {
 		}
 	}
 
-	rw.Header().Add("Content-Disposition", "inline; filename="+f.Flake+ext)
+	rw.Header().Add("Content-Disposition", "inline; filename="+f.Ext)
 	rw.Header().Add("Content-Type", mimetype)
 	_, err = rw.Write(f.Data)
 	if err != nil {

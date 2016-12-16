@@ -84,6 +84,18 @@
 			"revisionTime": "2016-09-20T23:08:13Z"
 		},
 		{
+			"checksumSHA1": "6defOlYtxIqheaUEG/cWWouQnIU=",
+			"path": "github.com/hlandau/passlib",
+			"revision": "933f1c3f63ffb0d17de04c3174f875ae683a33cd",
+			"revisionTime": "2016-09-22T11:41:03Z"
+		},
+		{
+			"checksumSHA1": "lJDwzzEBuS9sjxVOSsq7+rvw+cA=",
+			"path": "github.com/howeyc/gopass",
+			"revision": "f5387c492211eb133053880d23dfae62aa14123d",
+			"revisionTime": "2016-10-03T13:09:00Z"
+		},
+		{
 			"checksumSHA1": "wJP11H3Pl/9TvzbOVh0kB7/FmVc=",
 			"path": "github.com/kurin/blazer/b2",
 			"revision": "fff096e261374c464c633ef70b264f5e9651b091",
@@ -160,6 +172,30 @@
 			"path": "golang.org/x/crypto/acme/autocert",
 			"revision": "c367d6eeb7c6158125f2f47e049f7eb7e251c09a",
 			"revisionTime": "2016-10-18T21:00:36Z"
+		},
+		{
+			"checksumSHA1": "vE43s37+4CJ2CDU6TlOUOYE0K9c=",
+			"path": "golang.org/x/crypto/bcrypt",
+			"revision": "01be46f62051d02cb6a36c9b47b37b24e5758c81",
+			"revisionTime": "2016-12-15T13:43:59Z"
+		},
+		{
+			"checksumSHA1": "JsJdKXhz87gWenMwBeejTOeNE7k=",
+			"path": "golang.org/x/crypto/blowfish",
+			"revision": "01be46f62051d02cb6a36c9b47b37b24e5758c81",
+			"revisionTime": "2016-12-15T13:43:59Z"
+		},
+		{
+			"checksumSHA1": "1MGpGDQqnUoRpv7VEcQrXOBydXE=",
+			"path": "golang.org/x/crypto/pbkdf2",
+			"revision": "01be46f62051d02cb6a36c9b47b37b24e5758c81",
+			"revisionTime": "2016-12-15T13:43:59Z"
+		},
+		{
+			"checksumSHA1": "E8pDMGySfy5Mw+jzXOkOxo35bww=",
+			"path": "golang.org/x/crypto/scrypt",
+			"revision": "01be46f62051d02cb6a36c9b47b37b24e5758c81",
+			"revisionTime": "2016-12-15T13:43:59Z"
 		},
 		{
 			"checksumSHA1": "9C4Av3ypK5pi173F76ogJT/d8x4=",
@@ -275,6 +311,60 @@
 			"path": "golang.org/x/text/transform",
 			"revision": "ede1cb9f9f2f84c3bace9ca113fd740fc916cdd0",
 			"revisionTime": "2016-09-29T15:02:56Z"
+		},
+		{
+			"checksumSHA1": "klJ9QeZbE0SGPA1hhLjMwMTONig=",
+			"path": "gopkg.in/hlandau/easymetric.v1/cexp",
+			"revision": "1c173222e345c2ba115e0f483821c6da2d3b0fa9",
+			"revisionTime": "2015-09-23T21:15:05Z"
+		},
+		{
+			"checksumSHA1": "hBKoXBOEfoSVBsKCrUuB1YoLqNM=",
+			"path": "gopkg.in/hlandau/measurable.v1",
+			"revision": "d96a009bd9bda94dd1294105e67e8c1794e533d3",
+			"revisionTime": "2015-10-29T11:39:54Z"
+		},
+		{
+			"checksumSHA1": "dLTGi5ic/+/0iXUwlNJACCUegBo=",
+			"path": "gopkg.in/hlandau/passlib.v1/abstract",
+			"revision": "933f1c3f63ffb0d17de04c3174f875ae683a33cd",
+			"revisionTime": "2016-09-22T11:41:03Z"
+		},
+		{
+			"checksumSHA1": "WIlU/mYXRx+dOE8duG8NYhtJr2o=",
+			"path": "gopkg.in/hlandau/passlib.v1/hash/bcrypt",
+			"revision": "933f1c3f63ffb0d17de04c3174f875ae683a33cd",
+			"revisionTime": "2016-09-22T11:41:03Z"
+		},
+		{
+			"checksumSHA1": "+KHCKMjQSiGcoBTCK/rNaDUsZjA=",
+			"path": "gopkg.in/hlandau/passlib.v1/hash/bcryptsha256",
+			"revision": "933f1c3f63ffb0d17de04c3174f875ae683a33cd",
+			"revisionTime": "2016-09-22T11:41:03Z"
+		},
+		{
+			"checksumSHA1": "g9Craq/vfDfd8Mw9eAy6NFjfFz0=",
+			"path": "gopkg.in/hlandau/passlib.v1/hash/scrypt",
+			"revision": "933f1c3f63ffb0d17de04c3174f875ae683a33cd",
+			"revisionTime": "2016-09-22T11:41:03Z"
+		},
+		{
+			"checksumSHA1": "V4W70BcLKNnb53BTJ49YVmHapHA=",
+			"path": "gopkg.in/hlandau/passlib.v1/hash/scrypt/raw",
+			"revision": "933f1c3f63ffb0d17de04c3174f875ae683a33cd",
+			"revisionTime": "2016-09-22T11:41:03Z"
+		},
+		{
+			"checksumSHA1": "wbxXrJXpVsXVdLAv+d2zK+4ZZf4=",
+			"path": "gopkg.in/hlandau/passlib.v1/hash/sha2crypt",
+			"revision": "933f1c3f63ffb0d17de04c3174f875ae683a33cd",
+			"revisionTime": "2016-09-22T11:41:03Z"
+		},
+		{
+			"checksumSHA1": "dn+VC/24lLLgOErHEH8KoUN/Q18=",
+			"path": "gopkg.in/hlandau/passlib.v1/hash/sha2crypt/raw",
+			"revision": "933f1c3f63ffb0d17de04c3174f875ae683a33cd",
+			"revisionTime": "2016-09-22T11:41:03Z"
 		}
 	],
 	"rootPath": "git.timschuster.info/rls.moe/catgi"

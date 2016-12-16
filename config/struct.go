@@ -8,11 +8,18 @@ import (
 type Configuration struct {
 	Backend DriverConfig `json:"backend"`
 	Index   DriverConfig `json:"index"`
+	HMACKey string       `json:"jwtkey"`
+	Users   []UserConfig `json:"users"`
 }
 
 type DriverConfig struct {
 	Name   string                 `json:"driver"`
 	Params map[string]interface{} `json:"params"`
+}
+
+type UserConfig struct {
+	Username string `json:"username"`
+	PassHash string `json:"password"`
 }
 
 func LoadConfig(path string) (Configuration, error) {
