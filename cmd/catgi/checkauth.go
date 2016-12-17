@@ -34,7 +34,7 @@ func (h *handlerCheckToken) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if token.Method.Alg() != jwt.SigningMethodHS512.Alg() {
 				return nil, jwt.ErrInvalidKeyType
 			}
-			return curCfg.HMACKey, nil
+			return []byte(curCfg.HMACKey), nil
 		})
 		if err != nil {
 			w.WriteHeader(401)

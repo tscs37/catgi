@@ -64,7 +64,7 @@ func (h *handlerServeAuth) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				}
 				token := jwt.NewWithClaims(jwt.SigningMethodHS512, claims)
 
-				tokenString, err := token.SignedString(curCfg.HMACKey)
+				tokenString, err := token.SignedString([]byte(curCfg.HMACKey))
 
 				if err != nil {
 					log.Error("Error on auth: ", err)
@@ -76,9 +76,11 @@ func (h *handlerServeAuth) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				log.Debug("Setting auth cooie: ", tokenString)
 
 				http.SetCookie(w, &http.Cookie{
-					Name:    "auth",
-					Value:   tokenString,
-					Expires: time.Now().AddDate(0, 1, 0),
+					Name:     "auth",
+					Value:    tokenString,
+					Expires:  time.Now().AddDate(0, 1, 0),
+					Secure:   true,
+					HttpOnly: true,
 				})
 
 				fmt.Fprintf(w, "Logged in as %s.\nReturn to main page to upload files now.", user)

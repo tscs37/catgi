@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 
 	"git.timschuster.info/rls.moe/catgi/backend"
 	_ "git.timschuster.info/rls.moe/catgi/backend/b2"
@@ -19,13 +20,35 @@ var (
 )
 
 func main() {
-	ctx := logger.NewLoggingContext()
-	ctx = logger.SetLoggingLevel("DEBUG", ctx)
-
-	log := logger.LogFromCtx("main", ctx)
-
 	var err error
-	curCfg, err = config.LoadConfig("./conf.json")
+	if len(os.Args) < 2 {
+		print("Using default config\n")
+		curCfg.Backend = config.DriverConfig{
+			Name: "buntdb",
+			Params: map[string]interface{}{
+				"file": ":memory:",
+			},
+		}
+		curCfg.HMACKey = ""
+		curCfg.HTTPConf = config.HTTPConfig{
+			ListenOn: "[::1]",
+			Port:     8080,
+		}
+		curCfg.LogLevel = "debug"
+		curCfg.Users = []config.UserConfig{}
+
+	} else {
+		fmt.Printf("%s\n", os.Args)
+		curCfg, err = config.LoadConfig(os.Args[1])
+		if err != nil {
+			fmt.Printf("Config not valid: %s\n", err)
+			return
+		}
+	}
+
+	ctx := logger.NewLoggingContext()
+	ctx = logger.SetLoggingLevel(curCfg.LogLevel, ctx)
+	log := logger.LogFromCtx("main", ctx)
 
 	log.Info("Starting Backend")
 	be, err := backend.NewBackend(curCfg.Backend.Name, curCfg.Backend.Params, ctx)

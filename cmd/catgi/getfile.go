@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"bitbucket.org/taruti/mimemagic"
 	"git.timschuster.info/rls.moe/catgi/logger"
@@ -53,6 +54,9 @@ func (h *handlerServeGet) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 	rw.Header().Add("Content-Disposition", "inline; filename="+flake+f.FileExtension)
 	rw.Header().Add("Content-Type", mimetype)
+	remainingAge := fmt.Sprintf("%.0f", f.DeleteAt.Sub(time.Now().UTC()).Seconds())
+	rw.Header().Add("Cache-Control", "public, max-age="+remainingAge)
+	rw.Header().Add("X-Catgi-Expires-At", f.DeleteAt.Format("2006-01-02"))
 	_, err = rw.Write(f.Data)
 	if err != nil {
 		log.Errorf("Error on store: %s", err)

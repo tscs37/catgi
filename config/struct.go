@@ -8,9 +8,10 @@ import (
 type Configuration struct {
 	Backend  DriverConfig `json:"backend"`
 	Index    DriverConfig `json:"index"`
-	HMACKey  []byte       `json:"jwtkey"`
+	HMACKey  string       `json:"jwtkey"`
 	Users    []UserConfig `json:"users"`
 	HTTPConf HTTPConfig   `json:"http"`
+	LogLevel string       `json:"loglevel"`
 }
 
 type HTTPConfig struct {
