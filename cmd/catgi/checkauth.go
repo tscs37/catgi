@@ -22,8 +22,9 @@ func (h *handlerCheckToken) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if !(curCfg.Users == nil || len(curCfg.Users) == 0) {
 		cookie, err := r.Cookie("auth")
 		if err == http.ErrNoCookie {
-			fmt.Fprint(w, "No Token")
 			w.WriteHeader(401)
+			fmt.Fprint(w, "No Token")
+			return
 		}
 		token := cookie.Value
 		t, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {

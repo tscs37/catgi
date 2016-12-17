@@ -82,7 +82,11 @@ func (h *handlerServeAuth) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				})
 
 				fmt.Fprintf(w, "Logged in as %s.\nReturn to main page to upload files now.", user)
+				return
 			}
 		}
 	}
+	log.Debug("Could not find user ", user)
+	w.WriteHeader(401)
+	fmt.Fprintf(w, "401 - Not Authorized")
 }
