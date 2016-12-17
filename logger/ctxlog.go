@@ -28,14 +28,15 @@ func InjectLogToContext(ctx context.Context) context.Context {
 	return context.WithValue(ctx, "logger", logs)
 }
 
-func SetLoggingLevel(level string, ctx context.Context) {
+func SetLoggingLevel(level string, ctx context.Context) context.Context {
 	log, ok := ctx.Value("logger").(*logrus.Logger)
 	if !ok {
-		return
+		return ctx
 	}
 	lvl, err := logrus.ParseLevel(level)
 	if err != nil {
 		panic(err)
 	}
 	log.Level = lvl
+	return context.WithValue(ctx, "logger", log)
 }

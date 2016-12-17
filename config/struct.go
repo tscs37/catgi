@@ -6,10 +6,16 @@ import (
 )
 
 type Configuration struct {
-	Backend DriverConfig `json:"backend"`
-	Index   DriverConfig `json:"index"`
-	HMACKey string       `json:"jwtkey"`
-	Users   []UserConfig `json:"users"`
+	Backend  DriverConfig `json:"backend"`
+	Index    DriverConfig `json:"index"`
+	HMACKey  []byte       `json:"jwtkey"`
+	Users    []UserConfig `json:"users"`
+	HTTPConf HTTPConfig   `json:"http"`
+}
+
+type HTTPConfig struct {
+	Port     uint16 `json:"port"`
+	ListenOn string `json:"listen"`
 }
 
 type DriverConfig struct {

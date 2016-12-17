@@ -1,24 +1,15 @@
 package main
 
 import (
-	"errors"
-	"io/ioutil"
+	"fmt"
 	"net/http"
-	"time"
 
-	"path/filepath"
-
-	"bitbucket.org/taruti/mimemagic"
 	"git.timschuster.info/rls.moe/catgi/backend"
 	_ "git.timschuster.info/rls.moe/catgi/backend/b2"
 	_ "git.timschuster.info/rls.moe/catgi/backend/buntdb"
 	_ "git.timschuster.info/rls.moe/catgi/backend/fcache"
-	"git.timschuster.info/rls.moe/catgi/backend/types"
 	"git.timschuster.info/rls.moe/catgi/config"
 	"git.timschuster.info/rls.moe/catgi/logger"
-	"git.timschuster.info/rls.moe/catgi/snowflakes"
-	"github.com/InVisionApp/rye"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 )
 
@@ -29,11 +20,12 @@ var (
 
 func main() {
 	ctx := logger.NewLoggingContext()
-	logger.SetLoggingLevel("debug", ctx)
+	ctx = logger.SetLoggingLevel("DEBUG", ctx)
 
 	log := logger.LogFromCtx("main", ctx)
 
-	curCfg, err := config.LoadConfig("./conf.json")
+	var err error
+	curCfg, err = config.LoadConfig("./conf.json")
 
 	log.Info("Starting Backend")
 	be, err := backend.NewBackend(curCfg.Backend.Name, curCfg.Backend.Params, ctx)
@@ -43,238 +35,48 @@ func main() {
 	}
 	curBe = be
 	log.Infof("Loaded '%s' Backend Driver", be.Name())
-	mwHandler := rye.NewMWHandler(rye.Config{})
-
 	router := mux.NewRouter()
-	router.Handle("/file", mwHandler.Handle([]rye.Handler{
-		injectLogToRequest,
-		serveGet,
-	})).Methods("GET")
+	router.Handle("/file/{flake}",
+		newHandlerInjectLog(
+			newHandlerServeGet(),
+		),
+	).Methods("GET")
 
-	router.Handle("/file", mwHandler.Handle([]rye.Handler{
-		injectLogToRequest,
-		servePost,
-	}))
+	router.Handle("/file",
+		newHandlerInjectLog(
+			newHandlerCheckToken(
+				newHandlerServePost(),
+			),
+		),
+	).Methods("POST")
 
-	router.Handle("/", mwHandler.Handle([]rye.Handler{
-		injectLogToRequest,
-		serveSite,
-	}))
+	router.Handle("/",
+		newHandlerInjectLog(
+			newHandlerServeSite(),
+		),
+	).Methods("GET")
 
-	router.Handle("/login", mwHandler.Handle([]rye.Handler{
-		injectLogToRequest,
-		serveLogin,
-	}))
+	router.Handle("/login",
+		newHandlerInjectLog(
+			newHandlerServeLogin(),
+		),
+	).Methods("GET")
 
-	router.Handle("/auth", mwHandler.Handle([]rye.Handler{
-		injectLogToRequest,
-		serveAuth,
-	}))
+	router.Handle("/auth",
+		newHandlerInjectLog(
+			newHandlerServeAuth(),
+		),
+	).Methods("POST")
 
-	log.Info("Starting HTTP Service")
+	listenOn := curCfg.HTTPConf.ListenOn +
+		fmt.Sprintf(":%d", curCfg.HTTPConf.Port)
+	log.Info("Starting HTTP Service on ", listenOn)
 
-	http.ListenAndServe("[::1]:8080", router)
-}
-
-func injectLogToRequest(_ http.ResponseWriter, r *http.Request) *rye.Response {
-	return &rye.Response{
-		Context: logger.InjectLogToContext(r.Context()),
-	}
-}
-
-func serveAuth(rw http.ResponseWriter, r *http.Request) *rye.Response {
-	log := logger.LogFromCtx("postFile", r.Context())
-	claimflake, err := snowflakes.NewSnowflake()
+	err = http.ListenAndServe(
+		listenOn,
+		router,
+	)
 	if err != nil {
-		log.Warn("Could not generate claim flake: ", err)
-		return &rye.Response{
-			Err:           err,
-			StopExecution: true,
-		}
+		log.Fatal(err)
 	}
-	claims := &jwt.StandardClaims{
-		ExpiresAt: time.Now().AddDate(0, 2, 0).Unix(),
-		Issuer:    "catgi.rls.moe",
-		NotBefore: time.Now().Unix(),
-		Id:        claimflake,
-		Subject:   "login",
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS512, claims)
-
-	tokenString, err := token.SignedString(curCfg.HMACKey)
-
-	rw.Write([]byte(tokenString))
-
-	return nil
-}
-
-func serveLogin(rw http.ResponseWriter, r *http.Request) *rye.Response {
-	log := logger.LogFromCtx("serveLogin", r.Context())
-	dat, err := ioutil.ReadFile("./login.html")
-	if err != nil {
-		log.Error("Could not load file from disk: ", err)
-		return &rye.Response{
-			Err:           err,
-			StopExecution: true,
-		}
-	}
-	rw.WriteHeader(200)
-	rw.Header().Add("Content-Type", "application/html")
-	rw.Write(dat)
-	return nil
-}
-
-func serveSite(rw http.ResponseWriter, r *http.Request) *rye.Response {
-	log := logger.LogFromCtx("serverIndex", r.Context())
-	dat, err := ioutil.ReadFile("./index.html")
-	if err != nil {
-		log.Error("Could not load file from disk: ", err)
-		return &rye.Response{
-			Err:           err,
-			StopExecution: true,
-		}
-	}
-	rw.WriteHeader(200)
-	rw.Header().Add("Content-Type", "application/html")
-	rw.Write(dat)
-	return nil
-}
-
-func servePost(rw http.ResponseWriter, r *http.Request) *rye.Response {
-	log := logger.LogFromCtx("postFile", r.Context())
-
-	log.Debug("Getting snowflake")
-	flake, err := snowflakes.NewSnowflake()
-	if err != nil {
-		log.Error("Could not obtain a snowflake: ", err)
-		return &rye.Response{
-			Err:           err,
-			StopExecution: true,
-		}
-	}
-	log.Debug("Request Snowflake is ", flake)
-
-	err = r.ParseMultipartForm(25 * 1024 * 1024)
-	if err != nil {
-		log.Warn("Could not read form")
-		return &rye.Response{
-			Err:           err,
-			StopExecution: true,
-		}
-	}
-
-	var file types.File
-	httpFile, hdr, err := r.FormFile("data")
-	if err != nil {
-		log.Warn("Could not read form file")
-		return &rye.Response{
-			Err:           err,
-			StopExecution: true,
-		}
-	}
-	fileData, err := ioutil.ReadAll(httpFile)
-	if err != nil {
-		log.Warn("Could not read form file")
-		return &rye.Response{
-			Err:           err,
-			StopExecution: true,
-		}
-	}
-	file.Data = fileData
-	log.Infof("Read %d bytes of a file", len(file.Data))
-	dAt, err := types.FromString(r.Form.Get("delete_at"))
-	if err != nil {
-		log.Warn("Could not read delete time: ", err)
-		return &rye.Response{
-			Err:           err,
-			StopExecution: true,
-		}
-	}
-	file.DeleteAt = dAt
-	file.FileExtension = filepath.Ext(hdr.Filename)
-	file.ContentType = http.DetectContentType(file.Data)
-	file.Flake = flake
-
-	// TODO Implement Public Gallery
-	file.Public = false
-
-	err = curBe.Upload(flake, &file, r.Context())
-	if err != nil {
-		log.Warn("Could not commit file to database")
-		return &rye.Response{
-			Err:           err,
-			StopExecution: true,
-		}
-	}
-
-	{
-		http.Redirect(rw, r, "/file?flake="+file.Flake, 302)
-
-		return nil
-	}
-}
-
-func serveGet(rw http.ResponseWriter, r *http.Request) *rye.Response {
-	log := logger.LogFromCtx("getFile", r.Context())
-
-	log.Debug("Parsing Form")
-	err := r.ParseForm()
-	if err != nil {
-		log.Warn("Form not parsed, request aborted")
-		rye.WriteJSONStatus(rw, "error", err.Error(), 500)
-		return &rye.Response{
-			Err:           err,
-			StopExecution: true,
-		}
-	}
-
-	log.Debug("Loading Flake from Form")
-	flake := r.Form.Get("flake")
-	if len(flake) == 0 {
-		log.Warn("Form contained no flake")
-		err = errors.New("Missing Flake Parameter")
-		rye.WriteJSONStatus(rw, "error", err.Error(), 500)
-		return &rye.Response{
-			Err:           err,
-			StopExecution: true,
-		}
-	}
-
-	log.Debug("Loading File from Backend")
-	f, err := curBe.Get(flake, r.Context())
-	if err != nil {
-		log.Warn("File error on backend: ", err)
-		rye.WriteJSONStatus(rw, "error", err.Error(), 500)
-		return &rye.Response{
-			Err:           err,
-			StopExecution: true,
-		}
-	}
-
-	log.Debug("Writing out response")
-
-	mimetype := ""
-
-	if f.ContentType == "" {
-		if len(f.Data) > 1024 {
-			mimetype = mimemagic.Match("image/png", f.Data[:1024])
-		} else {
-			mimetype = mimemagic.Match("image/png", f.Data)
-		}
-	} else {
-		mimetype = f.ContentType
-	}
-
-	rw.Header().Add("Content-Disposition", "inline; filename="+flake+f.FileExtension)
-	rw.Header().Add("Content-Type", mimetype)
-	_, err = rw.Write(f.Data)
-	if err != nil {
-		log.Errorf("Error on store: %s", err)
-		return &rye.Response{
-			Err:           err,
-			StopExecution: true,
-		}
-	}
-
-	return nil
 }

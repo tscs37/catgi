@@ -36,12 +36,6 @@
 			"revision": ""
 		},
 		{
-			"checksumSHA1": "VAhnoYns5+nMj3JIvCgt/4e282o=",
-			"path": "github.com/InVisionApp/rye",
-			"revision": "fa5dc681811bf7ae69eecc7f212b15aa9a5b1022",
-			"revisionTime": "2016-12-08T14:51:35Z"
-		},
-		{
 			"checksumSHA1": "2avCvSn0XonfApKKuTMyiQmk7s0=",
 			"path": "github.com/Sirupsen/logrus",
 			"revision": "3ec0642a7fb6488f65b06f9040adc67e3990296a",
