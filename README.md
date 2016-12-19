@@ -93,3 +93,32 @@ This configuration will setup CatGi as follows:
         * buntdb will use an in-memory db
 
 Other backends might required differing configuration.
+
+## License
+
+CatGi is licensed under MPL 2.0
+
+Dependencies are under their respective license and copyright.
+
+## Contribute
+
+Pull requests should be well formatted.
+
+New Backends are required to implement everything but `ListGlob`.
+
+HTML should be kept to minimal filesize, CSS or JS should be avoided.
+
+Pull Request will be accepted from any of the code mirrors.
+
+## Future
+
+I regard CatGi as mostly feature complete for myself missing only two
+things:
+
+    * Public Gallery
+    * Automatic Garbage Collection
+
+These are very low priority so I'm going to do them whenever I find time
+myself.
+
+Pull Requests for additional features are welcome.
