@@ -110,6 +110,12 @@ HTML should be kept to minimal filesize, CSS or JS should be avoided.
 
 Pull Request will be accepted from any of the code mirrors.
 
+## Code Repository
+
+[Origin](https://git.timschuster.info/rls.moe/catgi)
+
+[Github](https://github.com/tscs37/catgi)
+
 ## Future
 
 I regard CatGi as mostly feature complete for myself missing only two
