@@ -12,8 +12,15 @@ type Configuration struct {
 	Users    []UserConfig `json:"users"`
 	HTTPConf HTTPConfig   `json:"http"`
 	LogLevel string       `json:"loglevel"`
+	Piwik    PiwikConfig  `json:"piwik"`
 }
 
+type PiwikConfig struct {
+	Enable       bool   `json:"enable"`
+	Base         string `json:"base"`
+	ID           string `json:"site_id"`
+	IgnoreErrors bool   `json:"ignore_err"`
+}
 type HTTPConfig struct {
 	Port     uint16 `json:"port"`
 	ListenOn string `json:"listen"`

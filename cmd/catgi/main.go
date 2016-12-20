@@ -58,30 +58,42 @@ func main() {
 	}
 	curBe = be
 	log.Infof("Loaded '%s' Backend Driver", be.Name())
+
+	piwik := newHandlerPiwik(curCfg.Piwik.Base, curCfg.Piwik.ID,
+		curCfg.Piwik.Enable, curCfg.Piwik.IgnoreErrors)
+
 	router := mux.NewRouter()
 	router.Handle("/file/{flake}",
 		newHandlerInjectLog(
-			newHandlerServeGet(),
+			piwik(
+				newHandlerServeGet(),
+			),
 		),
 	).Methods("GET")
 
 	router.Handle("/file",
 		newHandlerInjectLog(
-			newHandlerCheckToken(
-				newHandlerServePost(),
+			piwik(
+				newHandlerCheckToken(
+					newHandlerServePost(),
+				),
 			),
 		),
 	).Methods("POST")
 
 	router.Handle("/",
 		newHandlerInjectLog(
-			newHandlerServeSite(),
+			piwik(
+				newHandlerServeSite(),
+			),
 		),
 	).Methods("GET")
 
 	router.Handle("/login",
 		newHandlerInjectLog(
-			newHandlerServeLogin(),
+			piwik(
+				newHandlerServeLogin(),
+			),
 		),
 	).Methods("GET")
 

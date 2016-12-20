@@ -22,5 +22,5 @@ func (h *handlerInjectLog) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log := logger.LogFromCtx("httpLogInject", ctx)
 	log.Debug("Starting new request")
 	h.next.ServeHTTP(w, r.WithContext(ctx))
-	log.Debug("Starting new request")
+	log.Debug("Request Finished")
 }
