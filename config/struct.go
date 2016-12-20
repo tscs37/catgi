@@ -20,6 +20,7 @@ type PiwikConfig struct {
 	Base         string `json:"base"`
 	ID           string `json:"site_id"`
 	IgnoreErrors bool   `json:"ignore_err"`
+	Token        string `json:"admin_token"`
 }
 type HTTPConfig struct {
 	Port     uint16 `json:"port"`

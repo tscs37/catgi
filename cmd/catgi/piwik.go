@@ -19,6 +19,7 @@ type handlerPiwik struct {
 	ignoreError bool
 	enabled     bool
 	next        http.Handler
+	token       string
 }
 
 func newHandlerPiwik(base, id string, enable, ignoreErr bool) func(next http.Handler) http.Handler {
@@ -53,9 +54,15 @@ func (h *handlerPiwik) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		piwikCall = fmt.Sprintf(piwikCall, h.piwikBase)
 
+		if h.token != "" {
+			piwikCall = piwikCall + "?token_auth=" + h.token
+		}
+
 		log.Debug("Piwik Call is ", piwikCall)
 
 		log.Debug("Starting call...")
+
+		remote := r.RemoteAddr
 
 		go func() {
 			resp, err := client.PostForm(piwikCall, url.Values{
@@ -70,6 +77,7 @@ func (h *handlerPiwik) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				"lang":        []string{r.Header.Get("Accept-Language")},
 				"cs":          []string{"utf8"},
 				"urlref":      []string{r.Referer()},
+				"cip":         []string{remote},
 			})
 			if err != nil {
 				log.Error(err)
