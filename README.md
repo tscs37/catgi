@@ -2,50 +2,129 @@
 
 CatGi is a pluggable, extensible and selfhosted provider of images, text and more.
 
-## Storage
+The App does not rely on any configuration and operates
+as an in-memory testable filestore until a config is specified.
 
-CatGi's backend is kept as simple as possible so a wide
-range of platforms can be supported.
+## Usage
 
-Therefore the only methods the backend implements are the following:
+CatGi requires [govendor](https://github.com/kardianos/govendor) to be build.
 
-* Upload
-* Exists
-* Get
-* Delete
-* LoadIndex
-* StoreIndex
-* ListGlob
+```
+# Clone the repository
+git clone gogs@git.timschuster.info:rls.moe/catgi 
+# Go into Repository
+cd catgi
 
-The requirements for the underlying storage are as follows:
+# Optional:
+# Install missing dependencies
+govendor fetch +missing
 
-* Create new files and store contents with certain names
-* Check if a file of a certain name exists 
-* Retrieve a file based on a name
-* Delete a file based on a name
-* List all files matching a certain name glob (ie "file/*")
+# Otherwise
+# Install missing dependencies globally
+go get
 
-The LoadIndex and StoreIndex functions *can* be wrappers
-around Upload/Exists/Get/delete or they can also just call
-the storage directly. Either way works.
+# Build makepass
+cd makepass
+go build
 
-The Two Index functions must merely guarantee that the most
-recent version of the index can be retrieved.
+# Build catgi
+cd ..
+cd catgi
+go build
+```
 
-## Index
+### makepass
 
-The Index is the heart of CatGi storage. It keeps track
-of the lifetime of file objects, their metadata and
-caches data.
+`makepass` is a simple utility to generate user configuration.
 
-It's function set almost resembles HTTP Endpoints (Get, Put and Delete)
-but not quite yet.
+It asks for user and password (no confirmation) on the CLI and
+then prints a JSON string that can be copy-pasted into the configuration
 
-The Index interfaces with a given backend directly, so one index
-can theoretically be used for several backends at the same time
-as long as these backends are consistent or the index allows
-such operation.
+### catgi
 
-The purpose of the index is to keep a cached version of the
-backend around.
+```
+catgi [config-file]
+```
 
+Starts the webserver and configured backends. If no config is specified,
+catgi starts in default configuration.
+
+The default configuration stores everything in memory and leaves no
+permanent traces on the system (usually) and requires no login.
+
+It is recommended to setup authentication.
+
+## Configuration
+
+Here is an example config file:
+
+```
+{
+    "backend": {
+        "driver": "fcache",
+        "params": {
+            "driver": "buntdb",
+            "params": {
+                "file": ":memory:"
+            },
+            "cache_size": 20,
+            "async_upload": false
+        }
+    },
+    "users": [
+    ],
+    "http": {
+        "port": 8080,
+        "listen": "[::1]"
+    },
+    "loglevel": "debug"
+}
+```
+
+This configuration will setup CatGi as follows:
+
+* Set highest logging level : `loglevel`
+* Listen on `[::1]:8080` for HTTP traffic : `http.port` and `http.listen`
+* Empty user list means no login required : `users`
+* Use fcache for the backend : `backend.driver`
+    * fcache will use buntdb as backend : `backend.params.driver`
+    * fcache will cache 20 entries : `backend.params.cache_size`
+    * fcache will wait for upload to complete : `backend.params.async_upload`
+        * buntdb will use an in-memory db
+
+Other backends might required differing configuration.
+
+## License
+
+CatGi is licensed under MPL 2.0
+
+Dependencies are under their respective license and copyright.
+
+## Contribute
+
+Pull requests should be well formatted.
+
+New Backends are required to implement everything but `ListGlob`.
+
+HTML should be kept to minimal filesize, CSS or JS should be avoided.
+
+Pull Request will be accepted from any of the code mirrors.
+
+## Code Repository
+
+[Origin](https://git.timschuster.info/rls.moe/catgi)
+
+[Github](https://github.com/tscs37/catgi)
+
+## Future
+
+I regard CatGi as mostly feature complete for myself missing only two
+things:
+
+    * Public Gallery
+    * Automatic Garbage Collection
+
+These are very low priority so I'm going to do them whenever I find time
+myself.
+
+Pull Requests for additional features are welcome.
