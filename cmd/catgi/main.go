@@ -63,13 +63,29 @@ func main() {
 		curCfg.Piwik.Enable, curCfg.Piwik.IgnoreErrors)
 
 	router := mux.NewRouter()
-	router.Handle("/file/{flake}",
-		newHandlerInjectLog(
+	{
+		fileGetHandler := newHandlerInjectLog(
 			piwik(
 				newHandlerServeGet(),
 			),
-		),
-	).Methods("GET")
+		)
+
+		router.StrictSlash(false).Handle("/file/{flake}",
+			fileGetHandler,
+		).Methods("GET")
+
+		router.StrictSlash(false).Handle("/f/{flake}",
+			fileGetHandler,
+		).Methods("GET")
+
+		router.StrictSlash(false).Handle("/f/{flake}/",
+			fileGetHandler,
+		).Methods("GET")
+
+		router.Handle("/f/{flake}/{name}.{ext}",
+			fileGetHandler,
+		).Methods("GET")
+	}
 
 	router.Handle("/file",
 		newHandlerInjectLog(

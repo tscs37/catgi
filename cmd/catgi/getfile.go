@@ -52,7 +52,16 @@ func (h *handlerServeGet) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		mimetype = f.ContentType
 	}
 
-	rw.Header().Add("Content-Disposition", "inline; filename="+flake+f.FileExtension)
+	var filename = flake + f.FileExtension
+	{
+		if name, ok := vars["name"]; ok {
+			if ext, ok := vars["ext"]; ok {
+				filename = name + "." + ext
+			}
+		}
+	}
+
+	rw.Header().Add("Content-Disposition", "inline; filename="+filename)
 	rw.Header().Add("Content-Type", mimetype)
 	remainingAge := fmt.Sprintf("%.0f", f.DeleteAt.Sub(time.Now().UTC()).Seconds())
 	rw.Header().Add("Cache-Control", "public, max-age="+remainingAge)

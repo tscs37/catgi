@@ -78,5 +78,5 @@ func (h *handlerServePost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(rw, r, "/file/"+file.Flake, 302)
+	http.Redirect(rw, r, "/f/"+file.Flake+"/"+hdr.Filename, 302)
 }
