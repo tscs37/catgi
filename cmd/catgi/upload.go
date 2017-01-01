@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
+	"time"
 
 	"git.timschuster.info/rls.moe/catgi/backend/types"
 	"git.timschuster.info/rls.moe/catgi/logger"
@@ -63,6 +64,7 @@ func (h *handlerServePost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 	file.DeleteAt = dAt
+	file.CreatedAt = types.FromTime(time.Now().UTC())
 	file.FileExtension = filepath.Ext(hdr.Filename)
 	file.ContentType = http.DetectContentType(file.Data)
 	file.Flake = flake
