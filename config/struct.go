@@ -32,9 +32,17 @@ type DriverConfig struct {
 	Params map[string]interface{} `json:"params"`
 }
 
+type AuthenticationType string
+
+const (
+	ATPasslib AuthenticationType = ""
+	ATDropbox AuthenticationType = "dropbox"
+)
+
 type UserConfig struct {
-	Username string `json:"username"`
-	PassHash string `json:"password"`
+	Username string             `json:"username"`
+	PassHash string             `json:"password"`
+	AuthType AuthenticationType `json:"authtype"`
 }
 
 func LoadConfig(path string) (Configuration, error) {

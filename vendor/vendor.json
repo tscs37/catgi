@@ -126,6 +126,12 @@
 			"revisionTime": "2016-08-15T01:40:46Z"
 		},
 		{
+			"checksumSHA1": "ok/YVtQc561161EigwCXMPrFgV0=",
+			"path": "github.com/mishudark/dropbox-password",
+			"revision": "4a64d2c63287b155e227c441449438ba8564443b",
+			"revisionTime": "2016-12-29T18:41:17Z"
+		},
+		{
 			"checksumSHA1": "oouYEOJ4wFLlCWEgNy7/MWIzAfg=",
 			"path": "github.com/mitchellh/mapstructure",
 			"revision": "5a0325d7fafaac12dda6e7fb8bd222ec1b69875e",
