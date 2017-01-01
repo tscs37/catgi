@@ -19,7 +19,8 @@ type FCacheConfig struct {
 	Size int `mapstructure:"cache_size"`
 	// If set to true, then any upload will hit the cache
 	// and be uploaded in the background. May cause issues on
-	// heavy traffic
+	// heavy traffic and errors cannot be propagated to the user
+	// Files may disappear without warning.
 	AsyncUpload bool `mapstructure:"async_upload"`
 }
 
@@ -126,20 +127,6 @@ func (n *FCache) Delete(flake string, ctx context.Context) error {
 	return n.underlyingBackend.Delete(flake, ctx)
 }
 
-func (n *FCache) ListGlob(
-	glob string, ictx context.Context) (
-	[]*types.File, context.Context, error) {
-	return n.underlyingBackend.ListGlob(glob, ictx)
-}
-
-func (n *FCache) Publish(flake []string, name string, ctx context.Context) error {
-	return n.underlyingBackend.Publish(flake, name, ctx)
-}
-
-func (n *FCache) Unpublish(name string, ctx context.Context) error {
-	return n.underlyingBackend.Unpublish(name, ctx)
-}
-
-func (n *FCache) Resolve(name string, ctx context.Context) ([]string, error) {
-	return n.underlyingBackend.Resolve(name, ctx)
+func (n *FCache) ListGlob(ctx context.Context, prefix string) ([]*types.File, error) {
+	return n.underlyingBackend.ListGlob(ctx, prefix)
 }

@@ -19,6 +19,14 @@ func dataName(flake string) string { return "file/" + splitName(flake) + "/data.
 // Format: "file/<flake>/meta.json"
 func metaName(flake string) string { return "file/" + splitName(flake) + "/meta.json" }
 
+func isMetaFile(file string) bool {
+	return strings.HasPrefix(file, "file/") && strings.HasSuffix(file, "/meta.json")
+}
+
+func isDataFile(file string) bool {
+	return strings.HasPrefix(file, "file/") && strings.HasSuffix(file, "/data.bin")
+}
+
 // pubName is used to store public flakes for iteration
 // Format: "public/<flake>"
 func pubName(flake string) string { return "public/" + flake }

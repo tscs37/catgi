@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"io"
 	"time"
 
 	"encoding/json"
@@ -134,10 +135,38 @@ func (b *B2Backend) Delete(flake string, ctx context.Context) error {
 }
 
 // ListGlob returns a list of all files in the bucket
-func (b *B2Backend) ListGlob(
-	glob string, ictx context.Context) (
-	[]*types.File, context.Context, error) {
-	return nil, nil, nil
+func (b *B2Backend) ListGlob(ctx context.Context, glob string) ([]*types.File, error) {
+	log := logger.LogFromCtx(packageName+".ListGlob", ctx)
+	files := []*types.File{}
+	var cur *b2.Cursor
+	for {
+		objs, c, err := b.dataBucket.ListCurrentObjects(ctx, 1000, cur)
+		if err != nil && err != io.EOF {
+			return nil, err
+		}
+		for _, obj := range objs {
+			if !isMetaFile(obj.Name()) {
+				continue
+			}
+			var dat []byte
+			dat, err = b.readFile(obj.Name(), ctx)
+			if err != nil {
+				log.Error("Read error on glob: ", err)
+			} else {
+				var curFile *types.File
+				err = json.Unmarshal(dat, curFile)
+				if err != nil {
+					log.Error("Meta Unmarshal Error: ", err)
+				} else {
+					files = append(files, curFile)
+				}
+			}
+		}
+		if err == io.EOF {
+			return files, nil
+		}
+		cur = c
+	}
 }
 
 func (b *B2Backend) Publish(flake []string, name string, ctx context.Context) error {

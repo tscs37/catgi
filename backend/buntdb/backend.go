@@ -76,10 +76,22 @@ func (b *BuntDBBackend) Delete(name string, ctx context.Context) error {
 	})
 }
 
-func (b *BuntDBBackend) ListGlob(
-	glob string, ictx context.Context) (
-	[]*types.File, context.Context, error) {
-	return nil, nil, types.ErrorNotImplemented
+func (b *BuntDBBackend) ListGlob(ctx context.Context, prefix string) ([]*types.File, error) {
+	log := logger.LogFromCtx(bePackagename+".ListGlob", ctx)
+	files := make([]*types.File, 0)
+	b.db.View(func(tx *buntdb.Tx) error {
+		return tx.AscendKeys("/file/"+prefix+"*", func(key, value string) bool {
+			var next *types.File
+			err := json.Unmarshal([]byte(value), next)
+			if err != nil {
+				log.Error("Error during Bunt KV: ", err)
+			} else {
+				files = append(files, next)
+			}
+			return true
+		})
+	})
+	return nil, types.ErrorNotImplemented
 }
 
 func (b *BuntDBBackend) Publish(_ []string, _ string, _ context.Context) error {
