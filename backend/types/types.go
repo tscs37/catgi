@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"time"
 )
 
@@ -31,6 +32,16 @@ type Backend interface {
 	// cannot be delete now but only later, it *must* still return an error
 	Delete(name string, ctx context.Context) error
 
+	// ListGlob returns a list of all files with the given prefix
+	// The returned file structs need to contain the name but need not
+	// contain the file data
+	ListGlob(ctx context.Context, glob string) (files []*File, err error)
+}
+
+// Publisher is implemented by backends that support clear name publishing
+// of files.
+type Publisher interface {
+	Backend
 	// Publish associated a name with a flake for clearname publishing
 	// If the name is already taken, this fails
 	// A name may be associated with more than one flake
@@ -39,17 +50,44 @@ type Backend interface {
 	Unpublish(name string, ctx context.Context) error
 	// Resolves takes a name and returns a set of flakes for that name
 	Resolve(name string, ctx context.Context) ([]string, error)
+}
 
-	// ListGlob returns a list of all files that match the glob string.
-	// If context is not nil, the list is not complete and another query
-	// needs to be made, if the context is nil, no further queries are
-	// required. Backends can use this to effectively prevent rate-limits
-	// and load data more efficiently
-	// ListGlob MUST NOT list any files not created through Upload but also
-	// is NOT REQUIRED to list only files created through Upload.
-	ListGlob(
-		glob string, ictx context.Context) (
-		files []*File, octx context.Context, err error)
+// KVBackend is for small and indexed data, large data
+// should not be saved in here.
+// Structs that are saved in a KVBackend need to be fully serializable.
+// Keys will be formated using slash seperated prefix sets.
+//
+// Example: /prefix1/prefix1/key
+//
+// Some keys may also use a "<name>:" prefix with following additional
+// prefixes.
+type KVBackend interface {
+	Backend
+	// Set returns the saved interface
+	KVSet(ctx context.Context, key string, value interface{}) error
+	// Get returns the saved interface
+	KVGet(ctx context.Context, key string) (interface{}, error)
+	// Has returns true if the key exists
+	KVHas(ctx context.Context, key string) (bool, error)
+	// Ls returns a list of all keys with a given prefix
+	KVLs(ctx context.Context, prefix string) ([]string, error)
+}
+
+// ContentBackend implements a simple KV-store
+// Unlike the KVBackend it's entries need not be indexed
+// and it is supposed to handle much larger files than
+// KVBackend
+//
+// Unlike the methods provided by the standard backend, these methods
+// should allow for a more raw access, including accessing files by
+// internal names (although this is optional)
+type ContentBackend interface {
+	Backend
+	// Write will read data from reader and write it to the specified named
+	// file
+	CntWrite(ctx context.Context, name string, reader io.Reader) error
+	// Read will write any data from the named file into writer.
+	CntRead(ctx context.Context, name string, writer io.Writer) error
 }
 
 // File contains the data of a file, if it's public and when it was created.
@@ -68,6 +106,8 @@ type File struct {
 	ContentType string `json:"mime"`
 	// If this is not empty, use this extension for downloads.
 	FileExtension string `json:"ext,omitempty"`
+	// Username of who uploaded the file
+	User string `json:"usr,omitempty"`
 }
 
 // DefaultTTL is the default Time-to-Live of new Objects

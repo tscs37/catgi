@@ -67,6 +67,17 @@ func (h *handlerServePost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	file.ContentType = http.DetectContentType(file.Data)
 	file.Flake = flake
 
+	{
+		ctx := r.Context()
+		usr := ctx.Value("user")
+		if usr != nil {
+			if val, ok := usr.(string); ok {
+				log.Debug("User Context, setting owner")
+				file.User = val
+			}
+		}
+	}
+
 	// TODO Implement Public Gallery
 	file.Public = false
 

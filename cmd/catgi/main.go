@@ -66,7 +66,9 @@ func main() {
 	{
 		fileGetHandler := newHandlerInjectLog(
 			piwik(
-				newHandlerServeGet(),
+				newHandlerCheckToken(true,
+					newHandlerServeGet(),
+				),
 			),
 		)
 
@@ -90,7 +92,7 @@ func main() {
 	router.Handle("/file",
 		newHandlerInjectLog(
 			piwik(
-				newHandlerCheckToken(
+				newHandlerCheckToken(false,
 					newHandlerServePost(),
 				),
 			),
@@ -100,7 +102,9 @@ func main() {
 	router.Handle("/",
 		newHandlerInjectLog(
 			piwik(
-				newHandlerServeSite(),
+				newHandlerCheckToken(true,
+					newHandlerServeSite(),
+				),
 			),
 		),
 	).Methods("GET")
