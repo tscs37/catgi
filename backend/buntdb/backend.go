@@ -2,6 +2,7 @@ package buntdb
 
 import (
 	"encoding/json"
+	"time"
 
 	"context"
 
@@ -35,8 +36,15 @@ func (b *BuntDBBackend) Upload(name string, file *types.File, ctx context.Contex
 			logrus.Debug("Encoding Error ", err)
 			return err
 		}
+		var opts *buntdb.SetOptions = nil
+		if file.DeleteAt != nil {
+			opts = &buntdb.SetOptions{
+				Expires: true,
+				TTL:     file.DeleteAt.Sub(time.Now().UTC()),
+			}
+		}
 		log.Debug("Storing JSON into DB")
-		_, _, err = tx.Set("/file/"+name, string(encoded), nil)
+		_, _, err = tx.Set("/file/"+name, string(encoded), opts)
 		return err
 	})
 }
@@ -94,14 +102,9 @@ func (b *BuntDBBackend) ListGlob(ctx context.Context, prefix string) ([]*types.F
 	return nil, types.ErrorNotImplemented
 }
 
-func (b *BuntDBBackend) Publish(_ []string, _ string, _ context.Context) error {
-	return types.ErrorNotImplemented
-}
-
-func (b *BuntDBBackend) Unpublish(_ string, _ context.Context) error {
-	return types.ErrorNotImplemented
-}
-
-func (b *BuntDBBackend) Resolve(_ string, _ context.Context) ([]string, error) {
-	return nil, types.ErrorNotImplemented
+// RunGC is not executed on this backend, as Bunt has expiring entries.
+// Note: DB's created before the 4th Jan will not clean up files prior
+// to the introduction of this functionality.
+func (b *BuntDBBackend) RunGC(ctx context.Context) ([]types.File, error) {
+	return nil, nil
 }

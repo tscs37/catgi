@@ -19,6 +19,14 @@ func dataName(flake string) string { return "file/" + splitName(flake) + "/data.
 // Format: "file/<flake>/meta.json"
 func metaName(flake string) string { return "file/" + splitName(flake) + "/meta.json" }
 
+// pubName is used to store public flakes for iteration
+// Format: "public/<flake>"
+func pubName(flake string) string { return "public/" + flake }
+
+// clpubName is used to store published names
+// Format: "named/<name>/flakes.json"
+func clpubName(name string) string { return "named/" + name + "/flakes.json" }
+
 func isMetaFile(file string) bool {
 	return strings.HasPrefix(file, "file/") && strings.HasSuffix(file, "/meta.json")
 }
@@ -27,13 +35,13 @@ func isDataFile(file string) bool {
 	return strings.HasPrefix(file, "file/") && strings.HasSuffix(file, "/data.bin")
 }
 
-// pubName is used to store public flakes for iteration
-// Format: "public/<flake>"
-func pubName(flake string) string { return "public/" + flake }
+func isPublicFile(file string) bool {
+	return strings.HasPrefix(file, "public/")
+}
 
-// clpubName is used to store published names
-// Format: "named/<name>/flakes.json"
-func clpubName(name string) string { return "named/" + name + "/flakes.json" }
+func isNamedFile(file string) bool {
+	return strings.HasPrefix(file, "named/") && strings.HasSuffix(file, "/flakes.json")
+}
 
 // writeFile writes raw data into a specified file and logs into a context
 func (b *B2Backend) writeFile(name string, data []byte, ctx context.Context) error {

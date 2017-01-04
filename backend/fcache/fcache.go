@@ -130,3 +130,7 @@ func (n *FCache) Delete(flake string, ctx context.Context) error {
 func (n *FCache) ListGlob(ctx context.Context, prefix string) ([]*types.File, error) {
 	return n.underlyingBackend.ListGlob(ctx, prefix)
 }
+
+func (n *FCache) RunGC(ctx context.Context) ([]types.File, error) {
+	return n.underlyingBackend.RunGC(ctx)
+}

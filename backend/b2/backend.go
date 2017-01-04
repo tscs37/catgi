@@ -169,6 +169,38 @@ func (b *B2Backend) ListGlob(ctx context.Context, glob string) ([]*types.File, e
 	}
 }
 
+func (b *B2Backend) RunGC(ctx context.Context) ([]types.File, error) {
+	log := logger.LogFromCtx(packageName+".RunGC", ctx)
+	var deletedFiles = []types.File{}
+
+	log.Info("Obtaining file list from backend")
+	fPtrs, err := b.ListGlob(ctx, "*")
+	if err != nil {
+		return nil, err
+	}
+
+	log.Info("Scanning for files to be deleted")
+	for _, v := range fPtrs {
+		if v.DeleteAt.After(time.Now().UTC()) {
+			log.Debug("Scheduling ", v.Flake, " for deletion")
+			deletedFiles = append(deletedFiles, *v)
+		}
+	}
+
+	// Deletion is put into a second step to A) speed up scan and B)
+	// be more resilient (we can return a full list of maybe GC'd data)
+	log.Info("Deleting files")
+	for _, v := range fPtrs {
+		err := b.Delete(v.Flake, ctx)
+		if err != nil {
+			log.Debug("Deleting flake ", v.Flake)
+			return deletedFiles, err
+		}
+	}
+
+	return deletedFiles, nil
+}
+
 func (b *B2Backend) Publish(flake []string, name string, ctx context.Context) error {
 	log := logger.LogFromCtx(packageName+".Publish", ctx)
 	if len(flake) > 10 {
@@ -196,16 +228,6 @@ func (b *B2Backend) Unpublish(name string, ctx context.Context) error {
 
 func (b *B2Backend) Resolve(name string, ctx context.Context) ([]string, error) {
 	log := logger.LogFromCtx(packageName+".Resolve", ctx)
-
-	exists, attr, err := b.pingFile(name, ctx)
-	if err != nil {
-		log.Error("Could not read file from backend: ", err)
-		return nil, err
-	}
-	if !(exists && attr.Status == b2.Uploaded) {
-		log.Error("Could not read file from backend: exist check failed")
-		return nil, types.NewErrorFileNotExists(name, nil)
-	}
 
 	dat, err := b.readFile(clpubName(name), ctx)
 

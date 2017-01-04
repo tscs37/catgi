@@ -36,6 +36,15 @@ type Backend interface {
 	// The returned file structs need to contain the name but need not
 	// contain the file data
 	ListGlob(ctx context.Context, glob string) (files []*File, err error)
+
+	// RunGC will clean up expired files from the storage backend.
+	// On automatically expiring backends, this returns an empty array
+	// and a nil error.
+	// Otherwise it will return an array of all deleted files minus their
+	// content.
+	// If Deleting a file fails, the function returns with an error
+	// and a full list of files that were about to be deleted.
+	RunGC(ctx context.Context) ([]File, error)
 }
 
 // Publisher is implemented by backends that support clear name publishing
