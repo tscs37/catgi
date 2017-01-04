@@ -131,6 +131,13 @@ func (n *FCache) ListGlob(ctx context.Context, prefix string) ([]*types.File, er
 	return n.underlyingBackend.ListGlob(ctx, prefix)
 }
 
+// FCache will clear any GC'd files from the cache.
 func (n *FCache) RunGC(ctx context.Context) ([]types.File, error) {
-	return n.underlyingBackend.RunGC(ctx)
+	files, err := n.underlyingBackend.RunGC(ctx)
+	if files != nil {
+		for _, v := range files {
+			n.cache.Remove(v.Flake)
+		}
+	}
+	return files, err
 }
