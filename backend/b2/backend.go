@@ -189,6 +189,9 @@ func (b *B2Backend) RunGC(ctx context.Context) ([]types.File, error) {
 
 	// Deletion is put into a second step to A) speed up scan and B)
 	// be more resilient (we can return a full list of maybe GC'd data)
+	//
+	// Making a second run and comparing the returned lists may reveal
+	// some error points.
 	log.Info("Deleting files")
 	for _, v := range fPtrs {
 		err := b.Delete(v.Flake, ctx)
@@ -199,45 +202,4 @@ func (b *B2Backend) RunGC(ctx context.Context) ([]types.File, error) {
 	}
 
 	return deletedFiles, nil
-}
-
-func (b *B2Backend) Publish(flake []string, name string, ctx context.Context) error {
-	log := logger.LogFromCtx(packageName+".Publish", ctx)
-	if len(flake) > 10 {
-		log.Error("Too many flakes for publishing")
-		return types.ErrorQuotaExceeded
-	}
-	dat, err := json.Marshal(flake)
-	if err != nil {
-		log.Error("Could not marshall flake array")
-		return err
-	}
-
-	err = b.writeFile(clpubName(name), dat, ctx)
-
-	if err != nil {
-		log.Error("Could not write to publisher index :", err)
-		return err
-	}
-	return nil
-}
-
-func (b *B2Backend) Unpublish(name string, ctx context.Context) error {
-	return b.deleteFile(clpubName(name), ctx)
-}
-
-func (b *B2Backend) Resolve(name string, ctx context.Context) ([]string, error) {
-	log := logger.LogFromCtx(packageName+".Resolve", ctx)
-
-	dat, err := b.readFile(clpubName(name), ctx)
-
-	if err != nil {
-		log.Error("Could not read file from backend: ", err)
-		return nil, err
-	}
-
-	var out = []string{}
-
-	err = json.Unmarshal(dat, &out)
-	return out, err
 }

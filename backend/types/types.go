@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"time"
 )
 
@@ -45,58 +44,6 @@ type Backend interface {
 	// If Deleting a file fails, the function returns with an error
 	// and a full list of files that were about to be deleted.
 	RunGC(ctx context.Context) ([]File, error)
-}
-
-// Publisher is implemented by backends that support clear name publishing
-// of files.
-type Publisher interface {
-	Backend
-	// Publish associated a name with a flake for clearname publishing
-	// If the name is already taken, this fails
-	// A name may be associated with more than one flake
-	Publish(flake []string, name string, ctx context.Context) error
-	// Unpublish disassociates a name from any flakes it's associated with.
-	Unpublish(name string, ctx context.Context) error
-	// Resolves takes a name and returns a set of flakes for that name
-	Resolve(name string, ctx context.Context) ([]string, error)
-}
-
-// KVBackend is for small and indexed data, large data
-// should not be saved in here.
-// Structs that are saved in a KVBackend need to be fully serializable.
-// Keys will be formated using slash seperated prefix sets.
-//
-// Example: /prefix1/prefix1/key
-//
-// Some keys may also use a "<name>:" prefix with following additional
-// prefixes.
-type KVBackend interface {
-	Backend
-	// Set returns the saved interface
-	KVSet(ctx context.Context, key string, value interface{}) error
-	// Get returns the saved interface
-	KVGet(ctx context.Context, key string) (interface{}, error)
-	// Has returns true if the key exists
-	KVHas(ctx context.Context, key string) (bool, error)
-	// Ls returns a list of all keys with a given prefix
-	KVLs(ctx context.Context, prefix string) ([]string, error)
-}
-
-// ContentBackend implements a simple KV-store
-// Unlike the KVBackend it's entries need not be indexed
-// and it is supposed to handle much larger files than
-// KVBackend
-//
-// Unlike the methods provided by the standard backend, these methods
-// should allow for a more raw access, including accessing files by
-// internal names (although this is optional)
-type ContentBackend interface {
-	Backend
-	// Write will read data from reader and write it to the specified named
-	// file
-	CntWrite(ctx context.Context, name string, reader io.Reader) error
-	// Read will write any data from the named file into writer.
-	CntRead(ctx context.Context, name string, writer io.Writer) error
 }
 
 // File contains the data of a file, if it's public and when it was created.
