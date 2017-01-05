@@ -153,7 +153,7 @@ func (b *B2Backend) ListGlob(ctx context.Context, glob string) ([]*types.File, e
 			if err != nil {
 				log.Error("Read error on glob: ", err)
 			} else {
-				var curFile *types.File
+				var curFile = &types.File{}
 				err = json.Unmarshal(dat, curFile)
 				if err != nil {
 					log.Error("Meta Unmarshal Error: ", err)

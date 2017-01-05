@@ -123,7 +123,7 @@ func (n *FCache) Get(flake string, ctx context.Context) (*types.File, error) {
 }
 
 func (n *FCache) Delete(flake string, ctx context.Context) error {
-	n.cache.Remove(flake)
+	defer n.cache.Remove(flake)
 	return n.underlyingBackend.Delete(flake, ctx)
 }
 
@@ -134,10 +134,12 @@ func (n *FCache) ListGlob(ctx context.Context, prefix string) ([]*types.File, er
 // FCache will clear any GC'd files from the cache.
 func (n *FCache) RunGC(ctx context.Context) ([]types.File, error) {
 	files, err := n.underlyingBackend.RunGC(ctx)
-	if files != nil {
-		for _, v := range files {
-			n.cache.Remove(v.Flake)
+	defer func(delfiles []types.File) {
+		if delfiles != nil {
+			for _, v := range delfiles {
+				n.cache.Remove(v.Flake)
+			}
 		}
-	}
+	}(files)
 	return files, err
 }
