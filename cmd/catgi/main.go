@@ -99,6 +99,14 @@ func main() {
 		),
 	).Methods("POST")
 
+	router.Handle("/gc",
+		newHandlerInjectLog(
+			newHandlerCheckToken(false,
+				newHandlerRunGC(),
+			),
+		),
+	).Methods("GET")
+
 	router.Handle("/",
 		newHandlerInjectLog(
 			piwik(

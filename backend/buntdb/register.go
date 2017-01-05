@@ -5,6 +5,7 @@ import (
 
 	"git.timschuster.info/rls.moe/catgi/backend"
 	"git.timschuster.info/rls.moe/catgi/backend/types"
+	"git.timschuster.info/rls.moe/catgi/logger"
 	"github.com/mitchellh/mapstructure"
 	"github.com/tidwall/buntdb"
 )
@@ -18,8 +19,10 @@ func init() {
 }
 
 func NewBuntDBBackend(params map[string]interface{}, ctx context.Context) (types.Backend, error) {
+	log := logger.LogFromCtx(bePackagename+".New", ctx)
 	var config = &buntConfig{}
 	{
+		log.Debug("Loading Config")
 		decConf := &mapstructure.DecoderConfig{
 			ErrorUnused:      true,
 			WeaklyTypedInput: true,
@@ -35,10 +38,14 @@ func NewBuntDBBackend(params map[string]interface{}, ctx context.Context) (types
 		if err != nil {
 			return nil, err
 		}
+		log.Debug("Config Loading Complete")
 	}
+	log.Debug("Opening DB")
 	db, err := buntdb.Open(config.File)
 	if err != nil {
+		log.Error("Error on DB open, returning: ", err)
 		return nil, err
 	}
+	log.Debug("Driver initialized.")
 	return &BuntDBBackend{db: db}, nil
 }
