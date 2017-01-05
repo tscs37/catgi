@@ -151,6 +151,15 @@ func (dot *DateOnlyTime) MarshalJSON() ([]byte, error) {
 	return []byte(s), nil
 }
 
+func (dot *DateOnlyTime) TTL() time.Duration {
+	dead := dot.Unix()
+	now := time.Now().UTC().Unix()
+	if now >= dead {
+		return 0 * time.Second
+	}
+	return time.Duration(dead-now) * time.Second
+}
+
 func FromTime(t time.Time) *DateOnlyTime {
 	return &DateOnlyTime{
 		Time: t,
