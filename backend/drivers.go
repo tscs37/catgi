@@ -10,8 +10,6 @@ import (
 
 // Backend Type Alias for easier importing
 type Backend types.Backend
-type KVBackend types.KVBackend
-type ContentBackend types.ContentBackend
 
 type driverCreator func(map[string]interface{}, context.Context) (types.Backend, error)
 
