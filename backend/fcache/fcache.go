@@ -135,12 +135,8 @@ func (n *FCache) ListGlob(ctx context.Context, prefix string) ([]*types.File, er
 // This makes unpleasant things die.
 func (n *FCache) RunGC(ctx context.Context) ([]types.File, error) {
 	files, err := n.underlyingBackend.RunGC(ctx)
-	defer func(delfiles []types.File) {
-		if delfiles != nil {
-			for _, v := range delfiles {
-				n.cache.Remove(v.Flake)
-			}
-		}
-	}(files)
+	// After a GC we purge the cache since the actual
+	// contents in the backend may have changed drastically.
+	n.cache.Purge()
 	return files, err
 }

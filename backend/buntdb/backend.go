@@ -5,6 +5,8 @@ import (
 
 	"context"
 
+	"os"
+
 	"git.timschuster.info/rls.moe/catgi/backend/types"
 	"git.timschuster.info/rls.moe/catgi/logger"
 	"github.com/Sirupsen/logrus"
@@ -14,7 +16,10 @@ import (
 const bePackagename = "backend/buntdb/backend"
 
 type BuntDBBackend struct {
-	db *buntdb.DB
+	db           *buntdb.DB
+	file         string
+	allowMemStat bool
+	autoTTL      bool
 }
 
 func (b *BuntDBBackend) Name() string { return "buntdb-backend" }
@@ -43,7 +48,7 @@ func (b *BuntDBBackend) Upload(name string, file *types.File, ctx context.Contex
 		}
 
 		var opts *buntdb.SetOptions = nil
-		if file.DeleteAt != nil {
+		if file.DeleteAt != nil && b.autoTTL {
 			opts = &buntdb.SetOptions{
 				Expires: true,
 				TTL:     file.DeleteAt.TTL(),
@@ -158,14 +163,91 @@ func (b *BuntDBBackend) RunGC(ctx context.Context) ([]types.File, error) {
 
 	log.Debugf("Deleted %d flakes", len(deletedFiles))
 
-	log.Debug("Shrinking DB file")
+	log.Debugf("Shrunk DB by %d bytes", b.shrink(ctx))
 
-	err = b.db.Shrink()
+	return deletedFiles, nil
+}
+
+// Shrink attempts to reduce the size of the DB file and returns
+// the number of bytes saved.
+// If an error occurs, it's ignored.
+func (b *BuntDBBackend) shrink(ctx context.Context) int64 {
+	log := logger.LogFromCtx(bePackagename+".shrink", ctx)
+
+	var startSize, endSize int64
+
+	if b.file != ":memory:" {
+		log.Debugf("Stat'ing file %s", b.file)
+		if stat, err := os.Stat(b.file); !os.IsNotExist(err) {
+			startSize = stat.Size()
+			log.Debugf("Begin Shrink with %d bytes", startSize)
+		} else {
+			log.Error("Error while stat'ing DB: ", err)
+		}
+	} else {
+		if b.allowMemStat {
+			file, err := os.Create(".memory.tmp")
+			if err != nil {
+				log.Error("Could not create memory for Stat")
+			} else {
+				defer os.Remove(".memory.tmp")
+				err := b.db.Save(file)
+				if err != nil {
+					log.Error("Could not write memory to file for stat")
+				} else {
+					memStat, err := file.Stat()
+					if err != nil {
+						log.Error("Could not stat memory dump")
+					} else {
+						startSize = memStat.Size()
+						log.Debugf("Begin Shrink with %d bytes", startSize)
+					}
+				}
+			}
+		}
+	}
+
+	log.Debug("Beginning Shrink")
+	err := b.db.Shrink()
 	if err != nil {
 		log.WithField("non-critical", "").Warn("DB shrink failed: ", err)
 	} else {
 		log.Debug("Shrink OK")
 	}
 
-	return deletedFiles, nil
+	if b.file != ":memory:" {
+		log.Debugf("Stat'ing file %s", b.file)
+		if stat, err := os.Stat(b.file); !os.IsNotExist(err) {
+			endSize = stat.Size()
+			log.Debugf("Ended Shrink with %d bytes", endSize)
+		} else {
+			log.Error("Error while stat'ing DB: ", err)
+		}
+	} else {
+		if b.allowMemStat {
+			file, err := os.Create(".memory.tmp")
+			if err != nil {
+				log.Error("Could not create memory for Stat")
+			} else {
+				defer os.Remove(".memory.tmp")
+				err := b.db.Save(file)
+				if err != nil {
+					log.Error("Could not write memory to file for stat")
+				} else {
+					memStat, err := file.Stat()
+					if err != nil {
+						log.Error("Could not stat memory dump")
+					} else {
+						endSize = memStat.Size()
+						log.Debugf("Ended Shrink with %d bytes", endSize)
+					}
+				}
+			}
+		}
+	}
+
+	shrink := startSize - endSize
+
+	log.Debugf("Result shrink of %d kib", (shrink / 1024))
+	return shrink
 }
