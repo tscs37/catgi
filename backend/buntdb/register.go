@@ -12,9 +12,6 @@ import (
 
 type buntConfig struct {
 	File string `mapstructure:"file"`
-	// Set to true to allow the backend to stat the memory by
-	// writing it to disk temporarily.
-	StatMemory bool `mapstructure:"stat_mem"`
 	// NoAutoTTL disables automatic TTL and requires manual GC
 	// which may reduce CPU usage.
 	NoAutoTTL bool `mapstructure:"no_auto_expire"`
@@ -54,9 +51,8 @@ func NewBuntDBBackend(params map[string]interface{}, ctx context.Context) (types
 	}
 	log.Debug("Driver initialized.")
 	return &BuntDBBackend{
-		db:           db,
-		file:         config.File,
-		allowMemStat: config.StatMemory,
-		autoTTL:      !config.NoAutoTTL,
+		db:      db,
+		file:    config.File,
+		autoTTL: !config.NoAutoTTL,
 	}, nil
 }

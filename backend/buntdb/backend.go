@@ -16,10 +16,9 @@ import (
 const bePackagename = "backend/buntdb/backend"
 
 type BuntDBBackend struct {
-	db           *buntdb.DB
-	file         string
-	allowMemStat bool
-	autoTTL      bool
+	db      *buntdb.DB
+	file    string
+	autoTTL bool
 }
 
 func (b *BuntDBBackend) Name() string { return "buntdb-backend" }
@@ -171,6 +170,8 @@ func (b *BuntDBBackend) RunGC(ctx context.Context) ([]types.File, error) {
 // Shrink attempts to reduce the size of the DB file and returns
 // the number of bytes saved.
 // If an error occurs, it's ignored.
+// If the DB is running in memory mode, it returns 0 as cleaned size
+// as memory cannot be reliably stat'd.
 func (b *BuntDBBackend) shrink(ctx context.Context) int64 {
 	log := logger.LogFromCtx(bePackagename+".shrink", ctx)
 
@@ -183,27 +184,6 @@ func (b *BuntDBBackend) shrink(ctx context.Context) int64 {
 			log.Debugf("Begin Shrink with %d bytes", startSize)
 		} else {
 			log.Error("Error while stat'ing DB: ", err)
-		}
-	} else {
-		if b.allowMemStat {
-			file, err := os.Create(".memory.tmp")
-			if err != nil {
-				log.Error("Could not create memory for Stat")
-			} else {
-				defer os.Remove(".memory.tmp")
-				err := b.db.Save(file)
-				if err != nil {
-					log.Error("Could not write memory to file for stat")
-				} else {
-					memStat, err := file.Stat()
-					if err != nil {
-						log.Error("Could not stat memory dump")
-					} else {
-						startSize = memStat.Size()
-						log.Debugf("Begin Shrink with %d bytes", startSize)
-					}
-				}
-			}
 		}
 	}
 
@@ -222,27 +202,6 @@ func (b *BuntDBBackend) shrink(ctx context.Context) int64 {
 			log.Debugf("Ended Shrink with %d bytes", endSize)
 		} else {
 			log.Error("Error while stat'ing DB: ", err)
-		}
-	} else {
-		if b.allowMemStat {
-			file, err := os.Create(".memory.tmp")
-			if err != nil {
-				log.Error("Could not create memory for Stat")
-			} else {
-				defer os.Remove(".memory.tmp")
-				err := b.db.Save(file)
-				if err != nil {
-					log.Error("Could not write memory to file for stat")
-				} else {
-					memStat, err := file.Stat()
-					if err != nil {
-						log.Error("Could not stat memory dump")
-					} else {
-						endSize = memStat.Size()
-						log.Debugf("Ended Shrink with %d bytes", endSize)
-					}
-				}
-			}
 		}
 	}
 
