@@ -23,18 +23,25 @@ func (b *BuntDBBackend) Upload(name string, file *types.File, ctx context.Contex
 	log := logger.LogFromCtx(bePackagename+".Upload", ctx)
 	return b.db.Update(func(tx *buntdb.Tx) error {
 		log.Debug("Storing file ", name)
+
 		log.Debug("Checking DB, should return not found")
 		_, err := tx.Get("/file/" + name)
 		if err != buntdb.ErrNotFound {
+			tx.Rollback()
 			log.Debug("Error was not ErrNotFound")
 			return err
 		}
+
+		// BuntDB stores the entire file, seperating the data
+		// and metadata is not necessary
 		log.Debug("Encode File to JSON")
 		encoded, err := json.Marshal(file)
 		if err != nil {
+			tx.Rollback()
 			logrus.Debug("Encoding Error ", err)
 			return err
 		}
+
 		var opts *buntdb.SetOptions = nil
 		if file.DeleteAt != nil {
 			opts = &buntdb.SetOptions{
@@ -42,9 +49,16 @@ func (b *BuntDBBackend) Upload(name string, file *types.File, ctx context.Contex
 				TTL:     file.DeleteAt.TTL(),
 			}
 		}
+
 		log.Debug("Storing JSON into DB")
 		_, _, err = tx.Set("/file/"+name, string(encoded), opts)
-		return err
+
+		if err != nil {
+			tx.Rollback()
+			log.Error("Error in tx: ", err)
+			return err
+		}
+		return nil
 	})
 }
 
@@ -104,20 +118,21 @@ func (b *BuntDBBackend) ListGlob(ctx context.Context, prefix string) ([]*types.F
 
 // RunGC will try to find expired files, usually Bunt will take care of
 // this but this should cleanup any orphaned entries.
+// TODO: Remove once automatic expiry is properly tested
 func (b *BuntDBBackend) RunGC(ctx context.Context) ([]types.File, error) {
 	log := logger.LogFromCtx(bePackagename+".RunGC", ctx)
 	var deletedFiles = []types.File{}
 
-	log.Info("Obtaining file list from backend")
+	log.Debug("Obtaining file list from backend")
 	fPtrs, err := b.ListGlob(ctx, "*")
 	if err != nil {
 		log.Error("Error on Obtaining List: ", err)
 		return nil, err
 	}
 
-	log.Infof("About to clean %d files", len(fPtrs))
+	log.Debugf("About to clean %d files", len(fPtrs))
 
-	log.Info("Scanning for files to be deleted")
+	log.Debug("Scanning for files to be deleted")
 	for _, v := range fPtrs {
 		if v.DeleteAt.TTL() <= 0 {
 			log.Debug("Scheduling ", v.Flake, " for deletion")
@@ -131,7 +146,7 @@ func (b *BuntDBBackend) RunGC(ctx context.Context) ([]types.File, error) {
 	//
 	// Making a second run and comparing the returned lists may reveal
 	// some error points.
-	log.Info("Deleting files")
+	log.Debugf("Deleting files")
 	for _, v := range deletedFiles {
 		log.Debug("Starting delete for ", v.Flake)
 		err := b.Delete(v.Flake, ctx)
@@ -141,7 +156,16 @@ func (b *BuntDBBackend) RunGC(ctx context.Context) ([]types.File, error) {
 		}
 	}
 
-	log.Infof("Deleted %d flakes", len(deletedFiles))
+	log.Debugf("Deleted %d flakes", len(deletedFiles))
+
+	log.Debug("Shrinking DB file")
+
+	err = b.db.Shrink()
+	if err != nil {
+		log.WithField("non-critical", "").Warn("DB shrink failed: ", err)
+	} else {
+		log.Debug("Shrink OK")
+	}
 
 	return deletedFiles, nil
 }

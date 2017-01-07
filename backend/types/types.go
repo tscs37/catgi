@@ -154,6 +154,7 @@ func (dot *DateOnlyTime) MarshalJSON() ([]byte, error) {
 func (dot *DateOnlyTime) TTL() time.Duration {
 	dead := dot.Unix()
 	now := time.Now().UTC().Unix()
+	// flake already dead, TTL is 0
 	if now >= dead {
 		return 0 * time.Second
 	}
