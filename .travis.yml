@@ -7,4 +7,9 @@ go_import_path: git.timschuster.info/rls.moe/catgi
 
 install:
   - go get github.com/kardianos/govendor
-  - $GOPATH/bin/govendor fetch +all -v
+  - $GOPATH/bin/govendor fetch -v +all
+
+script:
+  - go test -v ./...
+  - cd cmd/catgi && go build; cd ../..
+  - cd cmd/makepass && go build; cd ../..
