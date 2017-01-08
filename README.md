@@ -129,7 +129,7 @@ I regard CatGi as mostly feature complete for myself missing only two
 things:
 
     * Public Gallery
-    * Automatic Garbage Collection
+    * Automatic Garbage Collection (Manual GC works now)
 
 These are very low priority so I'm going to do them whenever I find time
 myself.
