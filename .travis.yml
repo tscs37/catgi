@@ -1,0 +1,10 @@
+language: go
+
+go:
+  - 1.7.x
+
+go_import_path: git.timschuster.info/rls.moe/catgi
+
+install:
+  - go get github.com/kardianos/govendor
+  - $GOPATH/bin/govendor fetch +all -v
