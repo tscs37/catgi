@@ -22,6 +22,10 @@ cd catgi
 # Install missing dependencies
 govendor fetch +missing
 
+# Optional:
+# Install full vendor directory
+govendor fetch +all
+
 # Otherwise
 # Install missing dependencies globally
 go get
