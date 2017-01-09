@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"git.timschuster.info/rls.moe/catgi/backend/types"
+	"git.timschuster.info/rls.moe/catgi/backend/common"
 	"git.timschuster.info/rls.moe/catgi/logger"
 	"git.timschuster.info/rls.moe/catgi/snowflakes"
 )
@@ -39,7 +39,7 @@ func (h *handlerServePost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var file types.File
+	var file common.File
 	httpFile, hdr, err := r.FormFile("data")
 	if err != nil {
 		log.Warn("Could not read form file")
@@ -56,7 +56,7 @@ func (h *handlerServePost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	}
 	file.Data = fileData
 	log.Infof("Read %d bytes of a file", len(file.Data))
-	dAt, err := types.FromString(r.Form.Get("delete_at"))
+	dAt, err := common.FromString(r.Form.Get("delete_at"))
 	if err != nil {
 		log.Warn("Could not read delete time: ", err)
 		rw.WriteHeader(500)
@@ -64,7 +64,7 @@ func (h *handlerServePost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 	file.DeleteAt = dAt
-	file.CreatedAt = types.FromTime(time.Now().UTC())
+	file.CreatedAt = common.FromTime(time.Now().UTC())
 	file.FileExtension = filepath.Ext(hdr.Filename)
 	file.ContentType = http.DetectContentType(file.Data)
 	file.Flake = flake

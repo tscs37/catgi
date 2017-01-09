@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"git.timschuster.info/rls.moe/catgi/backend"
-	"git.timschuster.info/rls.moe/catgi/backend/types"
+	"git.timschuster.info/rls.moe/catgi/backend/common"
 	"github.com/kurin/blazer/b2"
 	"github.com/mitchellh/mapstructure"
 )
@@ -30,7 +30,7 @@ func init() {
 
 // NewB2Backend parses the incoming config from the mapstring
 // and preloads the account buckets
-func NewB2Backend(params map[string]interface{}, ctx context.Context) (types.Backend, error) {
+func NewB2Backend(params map[string]interface{}, ctx context.Context) (common.Backend, error) {
 	var config = &b2Config{}
 	{
 		decConf := &mapstructure.DecoderConfig{

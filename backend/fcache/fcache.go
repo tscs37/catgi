@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"git.timschuster.info/rls.moe/catgi/backend"
-	"git.timschuster.info/rls.moe/catgi/backend/types"
+	"git.timschuster.info/rls.moe/catgi/backend/common"
 	"git.timschuster.info/rls.moe/catgi/logger"
 	"github.com/bluele/gcache"
 	"github.com/mitchellh/mapstructure"
@@ -33,12 +33,12 @@ func init() {
 
 // FCache is a WIP Cache Structure
 type FCache struct {
-	underlyingBackend types.Backend
+	underlyingBackend common.Backend
 	cache             gcache.Cache
 	asyncUpload       bool
 }
 
-func NewFCacheBackend(params map[string]interface{}, ctx context.Context) (types.Backend, error) {
+func NewFCacheBackend(params map[string]interface{}, ctx context.Context) (common.Backend, error) {
 	var config = &FCacheConfig{}
 	{
 		decConf := &mapstructure.DecoderConfig{
@@ -73,7 +73,7 @@ func NewFCacheBackend(params map[string]interface{}, ctx context.Context) (types
 
 func (n *FCache) Name() string { return driverName }
 
-func (n *FCache) Upload(flake string, file *types.File, ctx context.Context) error {
+func (n *FCache) Upload(flake string, file *common.File, ctx context.Context) error {
 	if !n.asyncUpload {
 		err := n.underlyingBackend.Upload(flake, file, ctx)
 		if err != nil {
@@ -92,22 +92,25 @@ func (n *FCache) Upload(flake string, file *types.File, ctx context.Context) err
 		}()
 		return nil
 	}
-	return types.ErrorNotImplemented
+	return common.ErrorNotImplemented
 }
 
 func (n *FCache) Exists(flake string, ctx context.Context) error {
+	log := logger.LogFromCtx(packageName+".Get", ctx)
 	if _, err := n.cache.Get(flake); err == nil {
+		log.Debug("File in cache, exists if not stale")
 		return nil
 	}
+	log.Debug("File not in cache, asking backend")
 	return n.underlyingBackend.Exists(flake, ctx)
 }
 
-func (n *FCache) Get(flake string, ctx context.Context) (*types.File, error) {
+func (n *FCache) Get(flake string, ctx context.Context) (*common.File, error) {
 	log := logger.LogFromCtx(packageName+".Get", ctx)
 	log.Debug("Checking if file is in cache")
 	if val, err := n.cache.Get(flake); err == nil {
 		log.Debug("Checking if cache contains file (it should)")
-		if f, ok := val.(*types.File); ok {
+		if f, ok := val.(*common.File); ok {
 			log.Info("Answering request from cache")
 			return f, nil
 		}
@@ -127,13 +130,13 @@ func (n *FCache) Delete(flake string, ctx context.Context) error {
 	return n.underlyingBackend.Delete(flake, ctx)
 }
 
-func (n *FCache) ListGlob(ctx context.Context, prefix string) ([]*types.File, error) {
+func (n *FCache) ListGlob(ctx context.Context, prefix string) ([]*common.File, error) {
 	return n.underlyingBackend.ListGlob(ctx, prefix)
 }
 
 // FCache will clear any GC'd files from the cache.
 // This makes unpleasant things die.
-func (n *FCache) RunGC(ctx context.Context) ([]types.File, error) {
+func (n *FCache) RunGC(ctx context.Context) ([]common.File, error) {
 	files, err := n.underlyingBackend.RunGC(ctx)
 	// After a GC we purge the cache since the actual
 	// contents in the backend may have changed drastically.

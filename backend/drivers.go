@@ -5,13 +5,13 @@ import (
 	"errors"
 	"fmt"
 
-	"git.timschuster.info/rls.moe/catgi/backend/types"
+	"git.timschuster.info/rls.moe/catgi/backend/common"
 )
 
 // Backend Type Alias for easier importing
-type Backend types.Backend
+type Backend common.Backend
 
-type driverCreator func(map[string]interface{}, context.Context) (types.Backend, error)
+type driverCreator func(map[string]interface{}, context.Context) (common.Backend, error)
 
 var backendDrivers = map[string]driverCreator{}
 
@@ -28,7 +28,7 @@ func newNoDriverError(drv string) error {
 }
 
 func NewBackend(
-	driver string, params map[string]interface{}, ctx context.Context) (types.Backend, error) {
+	driver string, params map[string]interface{}, ctx context.Context) (common.Backend, error) {
 	if f, ok := backendDrivers[driver]; ok {
 		return f(params, ctx)
 	}
@@ -45,7 +45,7 @@ func InstalledDrivers() []string {
 
 func NewDriver(driver string, dfunc interface{}) error {
 	switch v := dfunc.(type) {
-	case func(map[string]interface{}, context.Context) (types.Backend, error):
+	case func(map[string]interface{}, context.Context) (common.Backend, error):
 		backendDrivers[driver] = v
 		return nil
 	default:

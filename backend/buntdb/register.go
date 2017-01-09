@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"git.timschuster.info/rls.moe/catgi/backend"
-	"git.timschuster.info/rls.moe/catgi/backend/types"
+	"git.timschuster.info/rls.moe/catgi/backend/common"
 	"git.timschuster.info/rls.moe/catgi/logger"
 	"github.com/mitchellh/mapstructure"
 	"github.com/tidwall/buntdb"
@@ -21,7 +21,7 @@ func init() {
 	backend.NewDriver("buntdb", NewBuntDBBackend)
 }
 
-func NewBuntDBBackend(params map[string]interface{}, ctx context.Context) (types.Backend, error) {
+func NewBuntDBBackend(params map[string]interface{}, ctx context.Context) (common.Backend, error) {
 	log := logger.LogFromCtx(bePackagename+".New", ctx)
 	var config = &buntConfig{
 		File:      ":memory:",

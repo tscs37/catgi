@@ -7,7 +7,7 @@ import (
 
 	"encoding/json"
 
-	"git.timschuster.info/rls.moe/catgi/backend/types"
+	"git.timschuster.info/rls.moe/catgi/backend/common"
 	"git.timschuster.info/rls.moe/catgi/logger"
 	"github.com/kurin/blazer/b2"
 )
@@ -19,10 +19,10 @@ const packageName = "backend/b2"
 func (b *B2Backend) Name() string { return driverName }
 
 // Upload writes to the object in B2
-func (b *B2Backend) Upload(flake string, file *types.File, ctx context.Context) error {
+func (b *B2Backend) Upload(flake string, file *common.File, ctx context.Context) error {
 	log := logger.LogFromCtx(packageName+".Upload", ctx)
 	log.Debug("Creating object '", flake, "'")
-	file.CreatedAt = types.FromTime(time.Now().UTC())
+	file.CreatedAt = common.FromTime(time.Now().UTC())
 	log.Debug("Writing File Data")
 	dataName := dataName(flake)
 	metaName := metaName(flake)
@@ -55,25 +55,25 @@ func (b *B2Backend) Exists(flake string, ctx context.Context) error {
 	metaName := metaName(flake)
 	exists, _, err := b.pingFile(dataName, ctx)
 	if err != nil {
-		return types.NewErrorFileNotExists(flake, err)
+		return common.NewErrorFileNotExists(flake, err)
 	}
 	if !exists {
-		return types.NewErrorFileNotExists(flake, nil)
+		return common.NewErrorFileNotExists(flake, nil)
 	}
 	exists, _, err = b.pingFile(metaName, ctx)
 	if err != nil {
-		return types.NewErrorFileNotExists(flake, err)
+		return common.NewErrorFileNotExists(flake, err)
 	}
 	if !exists {
-		return types.NewErrorFileNotExists(flake, nil)
+		return common.NewErrorFileNotExists(flake, nil)
 	}
 	return nil
 }
 
 // Get reads the B2 File from the backend
-func (b *B2Backend) Get(flake string, ctx context.Context) (*types.File, error) {
+func (b *B2Backend) Get(flake string, ctx context.Context) (*common.File, error) {
 	log := logger.LogFromCtx(packageName+".Exists", ctx).WithField("object", flake)
-	var file = &types.File{}
+	var file = &common.File{}
 	dataName := dataName(flake)
 	metaName := metaName(flake)
 
@@ -101,7 +101,7 @@ func (b *B2Backend) Get(flake string, ctx context.Context) (*types.File, error) 
 				log.Error("Error deleting data: ", err)
 				return nil, err
 			}
-			return nil, types.ErrorExpired
+			return nil, common.ErrorExpired
 		}
 	}
 
@@ -135,9 +135,9 @@ func (b *B2Backend) Delete(flake string, ctx context.Context) error {
 }
 
 // ListGlob returns a list of all files in the bucket
-func (b *B2Backend) ListGlob(ctx context.Context, glob string) ([]*types.File, error) {
+func (b *B2Backend) ListGlob(ctx context.Context, glob string) ([]*common.File, error) {
 	log := logger.LogFromCtx(packageName+".ListGlob", ctx)
-	files := []*types.File{}
+	files := []*common.File{}
 	var cur *b2.Cursor
 	for {
 		objs, c, err := b.dataBucket.ListCurrentObjects(ctx, 1000, cur)
@@ -153,7 +153,7 @@ func (b *B2Backend) ListGlob(ctx context.Context, glob string) ([]*types.File, e
 			if err != nil {
 				log.Error("Read error on glob: ", err)
 			} else {
-				var curFile = &types.File{}
+				var curFile = &common.File{}
 				err = json.Unmarshal(dat, curFile)
 				if err != nil {
 					log.Error("Meta Unmarshal Error: ", err)
@@ -169,9 +169,9 @@ func (b *B2Backend) ListGlob(ctx context.Context, glob string) ([]*types.File, e
 	}
 }
 
-func (b *B2Backend) RunGC(ctx context.Context) ([]types.File, error) {
+func (b *B2Backend) RunGC(ctx context.Context) ([]common.File, error) {
 	log := logger.LogFromCtx(packageName+".RunGC", ctx)
-	var deletedFiles = []types.File{}
+	var deletedFiles = []common.File{}
 
 	log.Info("Obtaining file list from backend")
 	fPtrs, err := b.ListGlob(ctx, "*")

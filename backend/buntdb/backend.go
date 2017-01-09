@@ -7,7 +7,7 @@ import (
 
 	"os"
 
-	"git.timschuster.info/rls.moe/catgi/backend/types"
+	"git.timschuster.info/rls.moe/catgi/backend/common"
 	"git.timschuster.info/rls.moe/catgi/logger"
 	"github.com/Sirupsen/logrus"
 	"github.com/tidwall/buntdb"
@@ -23,7 +23,7 @@ type BuntDBBackend struct {
 
 func (b *BuntDBBackend) Name() string { return "buntdb-backend" }
 
-func (b *BuntDBBackend) Upload(name string, file *types.File, ctx context.Context) error {
+func (b *BuntDBBackend) Upload(name string, file *common.File, ctx context.Context) error {
 	log := logger.LogFromCtx(bePackagename+".Upload", ctx)
 	return b.db.Update(func(tx *buntdb.Tx) error {
 		log.Debug("Storing file ", name)
@@ -76,8 +76,8 @@ func (b *BuntDBBackend) Exists(name string, ctx context.Context) error {
 	})
 }
 
-func (b *BuntDBBackend) Get(name string, ctx context.Context) (*types.File, error) {
-	var file = &types.File{}
+func (b *BuntDBBackend) Get(name string, ctx context.Context) (*common.File, error) {
+	var file = &common.File{}
 	log := logger.LogFromCtx(bePackagename+".Get", ctx)
 
 	errTx := b.db.View(func(tx *buntdb.Tx) error {
@@ -101,12 +101,12 @@ func (b *BuntDBBackend) Delete(name string, ctx context.Context) error {
 	})
 }
 
-func (b *BuntDBBackend) ListGlob(ctx context.Context, prefix string) ([]*types.File, error) {
+func (b *BuntDBBackend) ListGlob(ctx context.Context, prefix string) ([]*common.File, error) {
 	log := logger.LogFromCtx(bePackagename+".ListGlob", ctx)
-	files := make([]*types.File, 0)
+	files := make([]*common.File, 0)
 	b.db.View(func(tx *buntdb.Tx) error {
 		return tx.AscendKeys("/file/"+prefix+"*", func(key, value string) bool {
-			var next = &types.File{}
+			var next = &common.File{}
 			err := json.Unmarshal([]byte(value), next)
 			if err != nil {
 				log.Error("Error during Bunt KV: ", err)
@@ -123,9 +123,9 @@ func (b *BuntDBBackend) ListGlob(ctx context.Context, prefix string) ([]*types.F
 // RunGC will try to find expired files, usually Bunt will take care of
 // this but this should cleanup any orphaned entries.
 // TODO: Remove once automatic expiry is properly tested
-func (b *BuntDBBackend) RunGC(ctx context.Context) ([]types.File, error) {
+func (b *BuntDBBackend) RunGC(ctx context.Context) ([]common.File, error) {
 	log := logger.LogFromCtx(bePackagename+".RunGC", ctx)
-	var deletedFiles = []types.File{}
+	var deletedFiles = []common.File{}
 
 	log.Debug("Obtaining file list from backend")
 	fPtrs, err := b.ListGlob(ctx, "*")

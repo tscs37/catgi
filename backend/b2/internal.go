@@ -6,7 +6,7 @@ import (
 	"io"
 	"strings"
 
-	"git.timschuster.info/rls.moe/catgi/backend/types"
+	"git.timschuster.info/rls.moe/catgi/backend/common"
 	"git.timschuster.info/rls.moe/catgi/logger"
 	"github.com/kurin/blazer/b2"
 )
@@ -47,9 +47,9 @@ func isNamedFile(file string) bool {
 func (b *B2Backend) writeFile(name string, data []byte, ctx context.Context) error {
 	log := logger.LogFromCtx(packageName+".writeFile", ctx).
 		WithField("object", name).WithField("obj_len", len(data))
-	if len(data) > types.MaxDataSize {
+	if len(data) > common.MaxDataSize {
 		log.Warn("Attempted to store way too large file.")
-		return types.ErrorQuotaExceeded
+		return common.ErrorQuotaExceeded
 	}
 	obj := b.dataBucket.Object(name)
 	log.Debug("Opening new Writer")
@@ -83,7 +83,7 @@ func (b *B2Backend) pingFile(name string, ctx context.Context) (bool, *b2.Attrs,
 	log.Debug("Loading object attributes")
 	attrs, err := obj.Attrs(ctx)
 	if err != nil {
-		return false, nil, types.NewErrorFileNotExists(name, err)
+		return false, nil, common.NewErrorFileNotExists(name, err)
 	}
 
 	if attrs.Status == b2.Uploaded {
