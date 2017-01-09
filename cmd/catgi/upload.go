@@ -80,6 +80,12 @@ func (h *handlerServePost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	var disableRedirect = false
+	{
+		val := r.Form.Get("disable_redirect")
+		disableRedirect = (val == "on")
+	}
+
 	// TODO Implement Public Gallery
 	file.Public = false
 
@@ -91,5 +97,9 @@ func (h *handlerServePost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(rw, r, "/f/"+file.Flake+"/"+hdr.Filename, 302)
+	if !disableRedirect {
+		http.Redirect(rw, r, "/f/"+file.Flake+"/"+hdr.Filename, 302)
+	} else {
+		fmt.Fprint(rw, "/f/"+file.Flake+"/"+hdr.Filename)
+	}
 }
