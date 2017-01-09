@@ -23,7 +23,10 @@ func init() {
 
 func NewBuntDBBackend(params map[string]interface{}, ctx context.Context) (types.Backend, error) {
 	log := logger.LogFromCtx(bePackagename+".New", ctx)
-	var config = &buntConfig{}
+	var config = &buntConfig{
+		File:      ":memory:",
+		NoAutoTTL: false,
+	}
 	{
 		log.Debug("Loading Config")
 		decConf := &mapstructure.DecoderConfig{
