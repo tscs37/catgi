@@ -8,12 +8,15 @@ import (
 	"os/signal"
 	"syscall"
 
+	"net"
+
 	"git.timschuster.info/rls.moe/catgi/backend"
 	_ "git.timschuster.info/rls.moe/catgi/backend/b2"
 	_ "git.timschuster.info/rls.moe/catgi/backend/buntdb"
 	_ "git.timschuster.info/rls.moe/catgi/backend/fcache"
 	"git.timschuster.info/rls.moe/catgi/config"
 	"git.timschuster.info/rls.moe/catgi/logger"
+	"git.timschuster.info/rls.moe/catgi/utils"
 	"github.com/gorilla/mux"
 )
 
@@ -147,28 +150,50 @@ func main() {
 		syscall.SIGKILL,
 	)
 
-	go func(sig chan os.Signal) {
+	listener, err := net.Listen("tcp", listenOn)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	stpLst := utils.Handle(listener)
+
+	closeServ := func(stpLst *utils.StoppableListener) {
+		log.Print("Terminating Webserver")
+		stpLst.Stop <- true
+		log.Print("Waiting for connections to finish")
+		utils.WaitFor(func() bool { return stpLst.ConnCount.Get() == 0 })
+		log.Print("Server Stopped and All Connection Closed")
+	}
+
+	go func(sig chan os.Signal, stpLst *utils.StoppableListener) {
 		for {
 			v := <-sig
+			log.Print("Received System Signal")
 			switch v {
 			case os.Interrupt:
+				closeServ(stpLst)
 				os.Exit(1)
 			case syscall.SIGHUP:
+				closeServ(stpLst)
 				// 0-Code Exit on HUP
 				os.Exit(0)
 			case syscall.SIGINT:
+				closeServ(stpLst)
 				os.Exit(1)
 			case syscall.SIGTERM:
+				closeServ(stpLst)
 				os.Exit(1)
 			case syscall.SIGKILL:
+				closeServ(stpLst)
 				os.Exit(1)
 			default:
 			}
 		}
-	}(sigChan)
+	}(sigChan, stpLst)
 
-	err = http.ListenAndServe(
-		listenOn,
+	err = http.Serve(
+		stpLst,
 		router,
 	)
 	if err != nil {
