@@ -60,10 +60,6 @@
 			"revisionTime": "2016-11-01T19:39:35Z"
 		},
 		{
-			"path": "github.com/etic/stoppableListener",
-			"revision": ""
-		},
-		{
 			"checksumSHA1": "HmbftipkadrLlCfzzVQ+iFHbl6g=",
 			"path": "github.com/golang/glog",
 			"revision": "23def4e6c14b4da8ac2ed8007337bc5eb5007998",
