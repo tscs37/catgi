@@ -5,6 +5,9 @@ import (
 	"net/http"
 	"os"
 
+	"os/signal"
+	"syscall"
+
 	"git.timschuster.info/rls.moe/catgi/backend"
 	_ "git.timschuster.info/rls.moe/catgi/backend/b2"
 	_ "git.timschuster.info/rls.moe/catgi/backend/buntdb"
@@ -134,6 +137,35 @@ func main() {
 	listenOn := curCfg.HTTPConf.ListenOn +
 		fmt.Sprintf(":%d", curCfg.HTTPConf.Port)
 	log.Info("Starting HTTP Service on ", listenOn)
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan,
+		os.Interrupt,
+		syscall.SIGHUP,
+		syscall.SIGINT,
+		syscall.SIGTERM,
+		syscall.SIGKILL,
+	)
+
+	go func(sig chan os.Signal) {
+		for {
+			v := <-sig
+			switch v {
+			case os.Interrupt:
+				os.Exit(1)
+			case syscall.SIGHUP:
+				// 0-Code Exit on HUP
+				os.Exit(0)
+			case syscall.SIGINT:
+				os.Exit(1)
+			case syscall.SIGTERM:
+				os.Exit(1)
+			case syscall.SIGKILL:
+				os.Exit(1)
+			default:
+			}
+		}
+	}(sigChan)
 
 	err = http.ListenAndServe(
 		listenOn,
