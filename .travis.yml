@@ -19,7 +19,7 @@ cache:
   directories:
   - $GOPATH/.cache
 after_success:
-- export DEPLOYSUFFIX=${TRAVIS_GO_VERSION}.${GOOS}.${GOARCH}
+- export DEPLOYSUFFIX="go${TRAVIS_GO_VERSION}"
 - export BINVER=$(git describe --first-parent --tags)
 - echo "Suffix is ${BINVAR}_${DEPLOYSUFFIX}"
 - mv cmd/catgi/catgi cmd/catgi/catgi-${BINVER}_${DEPLOYSUFFIX}
