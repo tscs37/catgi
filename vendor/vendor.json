@@ -198,13 +198,6 @@
 			"revisionTime": "2016-11-30T01:20:33Z"
 		},
 		{
-			"checksumSHA1": "uTQtOqR0ePMMcvuvAIksiIZxhqU=",
-			"origin": "github.com/Sirupsen/logrus/vendor/golang.org/x/sys/unix",
-			"path": "golang.org/x/sys/unix",
-			"revision": "d75a52659825e75fff6158388dddc6a5b04f9ba5",
-			"revisionTime": "2016-12-14T18:38:57Z"
-		},
-		{
 			"checksumSHA1": "klJ9QeZbE0SGPA1hhLjMwMTONig=",
 			"path": "gopkg.in/hlandau/easymetric.v1/cexp",
 			"revision": "1c173222e345c2ba115e0f483821c6da2d3b0fa9",
