@@ -3,6 +3,8 @@ go:
 - 1.7.x
 - 1.8rc1
 - master
+env:
+- GOOS=linux GOARCH=amd64
 go_import_path: git.timschuster.info/rls.moe/catgi
 install:
 - go get github.com/kardianos/govendor
