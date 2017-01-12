@@ -1,3 +1,22 @@
+# v0.1.3:
+
+## New Features:
+* The Server now catches Signals from the OS and handles them (somewhat) properly. Please see the code for licensing details.
+
+## Fixes & Notes:
+* Moved the backend/types code to backend/common, which will be expanded on
+* FCache will now log on .Exists for clarity when it errors
+* Basis for LocalFS backend is put in but not active yet, this should not affect the builds
+* BuntDB now defaults to in-memory and AutoTTL enabled when no params specified
+* The Logger will insert a request ID into the context for better logging context
+* The Request ID is a snowflake style ID which is generated based on timestamp.
+* Removed some unneeded dependencies from the vendor.json 
+
+## Non-Code-Related:
+* Travis now deploys directly to Github
+* README links to travis correctly
+* The Redirect Functionality was merged into develop, mistake on my part.
+
 # v0.1.2:
 
 ## New Features:
