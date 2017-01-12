@@ -1,6 +1,8 @@
 language: go
 go:
 - 1.7.x
+- 1.8rc1
+- master
 go_import_path: git.timschuster.info/rls.moe/catgi
 install:
 - go get github.com/kardianos/govendor
@@ -9,10 +11,22 @@ script:
 - go test -v ./...
 - cd cmd/catgi && go build; cd ../..
 - cd cmd/makepass && go build; cd ../..
+cache:
+  directories:
+  - $GOPATH/.cache
+after_success:
+- export DEPLOYSUFFIX=${TRAVIS_GO_VERSION}.$GOOS.$GOARCH
+- export BINVER=$(git describe --first-parent --tags)
+- mv cmd/catgi/catgi cmd/catgi/catgi-$BINVER_${DEPLOYSUFFIX}
+- mv cmd/makepass/makepass cmd/makepass/makepass-$BINVER_${DEPLOYSUFFIX}
 deploy:
+  skip_cleanup: true
   provider: releases
   api_key:
     secure: s6jxrhSdP+NkYVGmnZAm4RfEI5KP5cCuz7GKTSZrhSjuKASpAYIMebY4wf4EdaSdXWpsoXIcgfT+gk96ei4EQ88mbrfdBYy6RqFrwfJO+w14BvNcSR5jQprP4ILYAar4TZwOl60KPtu/6eLv/foKFGw593ZJdMLZi4F5C5rBEMv7PgagmuBbFY46k53wGk5dDL+y9+5lDjdwK2gFUNlbZmFOurv4Eyh5fzRAMB4+xzhAQQ21yfQqk2KFeOKy+B4xDG0HIEhX1e+mRvQkY4+ZmiHk/GPtZ4h9EzcYFPJAP9C+q2xd9kfsDm8q8j5sNO/Zp/D7uHj/avgT8RjFG7HKj+OpM0zwxJOYgatdjxnQ2oOegg0UugK2dZUE/1QQDgk35NspiOqPPBnXF0E8btUFGFd/NHTbfErgzp6RRVCswwd9+D4VfGEQcBEnt/A46psBG2frq4EiUwAn6e1tsoO+KxpCgxmULqCaoVFbtI/Nl6w1974xIS0vjMgV7FysWWm4cAkJJNs5fhv//AhWt3aRJ3mS7SzFgt6eft04DC0Wmp76XqN/140VnDeRAymWJwtLJJzBjdiP2x7cFPjFbdUeo6Ilsj0HN3BCiTPlt/62Z4N+J6oXWuo/BhjPXdhWUT2mWrtP4I3cm0dvTOueHuriI/7IxkVyL4gAoyMdoYnexxA=
-  file: cmd/catgi/catgi
+  file_glob: true
+  file:
+    - "cmd/catgi/catgi-*"
+    - "cmd/makepass/makepass-*"
   on:
     tags: true
