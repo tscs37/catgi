@@ -19,6 +19,8 @@ after_success:
 - export BINVER=$(git describe --first-parent --tags)
 - mv cmd/catgi/catgi cmd/catgi/catgi-$BINVER_${DEPLOYSUFFIX}
 - mv cmd/makepass/makepass cmd/makepass/makepass-$BINVER_${DEPLOYSUFFIX}
+- ls cmd/catgi | grep "catgi-"
+- ls cmd/makepass | grep "makepass-"
 deploy:
   skip_cleanup: true
   provider: releases
