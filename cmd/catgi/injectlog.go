@@ -18,6 +18,7 @@ func newHandlerInjectLog(nextHandler http.Handler) http.Handler {
 
 func (h *handlerInjectLog) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := logger.InjectLogToContext(r.Context())
+	ctx = logger.CreateRequestIDContext(ctx)
 	ctx = logger.SetLoggingLevel(curCfg.LogLevel, ctx)
 	log := logger.LogFromCtx("httpLogInject", ctx)
 	log.Debug("Starting new request")
