@@ -15,10 +15,11 @@ cache:
   directories:
   - $GOPATH/.cache
 after_success:
-- export DEPLOYSUFFIX=${TRAVIS_GO_VERSION}.$GOOS.$GOARCH
+- export DEPLOYSUFFIX=${TRAVIS_GO_VERSION}.${GOOS}.${GOARCH}
 - export BINVER=$(git describe --first-parent --tags)
-- mv cmd/catgi/catgi cmd/catgi/catgi-$BINVER_${DEPLOYSUFFIX}
-- mv cmd/makepass/makepass cmd/makepass/makepass-$BINVER_${DEPLOYSUFFIX}
+- echo "Suffix is ${BINVAR}_${DEPLOYSUFFIX}"
+- mv cmd/catgi/catgi cmd/catgi/catgi-${BINVER}_${DEPLOYSUFFIX}
+- mv cmd/makepass/makepass cmd/makepass/makepass-${BINVER}_${DEPLOYSUFFIX}
 - ls cmd/catgi | grep "catgi-"
 - ls cmd/makepass | grep "makepass-"
 deploy:
