@@ -9,7 +9,7 @@ install:
 - go get github.com/kardianos/govendor
 - "$GOPATH/bin/govendor sync -v"
 script:
-- go test -v ./...
+- govendor test -v +local
 - cd cmd/catgi && go build; cd ../..
 - cd cmd/makepass && go build; cd ../..
 cache:
