@@ -33,7 +33,6 @@ func testGetNonExist(b Backend, t *testing.T) {
 		t.Fail()
 		return
 	}
-	t.Log("Non-Existant file is ok")
 }
 
 func testUploadEmpty(b Backend, t *testing.T) {
@@ -80,6 +79,7 @@ func testGetEmpty(b Backend, t *testing.T) {
 	assert.Nil(file.CreatedAt)
 	assert.Nil(file.DeleteAt)
 
+	// File Data must never be nil
 	assert.NotNil(file.Data)
 	assert.Empty(file.Data)
 

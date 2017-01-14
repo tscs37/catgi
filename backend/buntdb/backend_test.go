@@ -6,7 +6,7 @@ import (
 	"git.timschuster.info/rls.moe/catgi/backend/common"
 )
 
-func TestRun(t *testing.T) {
+func TestCompliance(t *testing.T) {
 	ctx := common.GetTestCtx()
 	inmemDB, err := NewBuntDBBackend(map[string]interface{}{
 		"file": ":memory:",
