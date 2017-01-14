@@ -8,34 +8,6 @@
 			"revision": ""
 		},
 		{
-			"path": "git.timschuster.info/rls.moe/catgi/backend",
-			"revision": ""
-		},
-		{
-			"path": "git.timschuster.info/rls.moe/catgi/backend/b2",
-			"revision": ""
-		},
-		{
-			"path": "git.timschuster.info/rls.moe/catgi/backend/buntdb",
-			"revision": ""
-		},
-		{
-			"path": "git.timschuster.info/rls.moe/catgi/backend/types",
-			"revision": ""
-		},
-		{
-			"path": "git.timschuster.info/rls.moe/catgi/cmd/catgi",
-			"revision": ""
-		},
-		{
-			"path": "git.timschuster.info/rls.moe/catgi/config",
-			"revision": ""
-		},
-		{
-			"path": "git.timschuster.info/rls.moe/catgi/snowflakes",
-			"revision": ""
-		},
-		{
 			"checksumSHA1": "2avCvSn0XonfApKKuTMyiQmk7s0=",
 			"path": "github.com/Sirupsen/logrus",
 			"revision": "3ec0642a7fb6488f65b06f9040adc67e3990296a",

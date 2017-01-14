@@ -8,9 +8,7 @@ env:
 go_import_path: git.timschuster.info/rls.moe/catgi
 install:
 - go get github.com/kardianos/govendor
-- "$GOPATH/bin/govendor fetch -v +all"
-# We should use this but for some reason it bugs out mimemagic
-#- "$GOPATH/bin/govendor sync -v"
+- "$GOPATH/bin/govendor sync -v"
 script:
 - go test -v ./...
 - cd cmd/catgi && go build; cd ../..
@@ -34,6 +32,8 @@ deploy:
   file_glob: true
   file:
     - "cmd/catgi/catgi-*"
+    - "cmd/catgi/index.html"
+    - "cmd/catgi/login.html"
     - "cmd/makepass/makepass-*"
   on:
     tags: true
