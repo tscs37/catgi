@@ -3,11 +3,6 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "mEQLqy0yAxWDU4ocIUNVBU1Lsm0=",
-			"path": "bitbucket.org/taruti/mimemagic",
-			"revision": "e5179c80a024fe516da65f0b006f56fa7800694e"
-		},
-		{
 			"checksumSHA1": "2avCvSn0XonfApKKuTMyiQmk7s0=",
 			"path": "github.com/Sirupsen/logrus",
 			"revision": "3ec0642a7fb6488f65b06f9040adc67e3990296a",

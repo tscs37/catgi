@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"bitbucket.org/taruti/mimemagic"
 	"git.timschuster.info/rls.moe/catgi/logger"
 	"github.com/gorilla/mux"
 )
@@ -44,10 +43,10 @@ func (h *handlerServeGet) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	mimetype := ""
 
 	if f.ContentType == "" {
-		if len(f.Data) > 1024 {
-			mimetype = mimemagic.Match("image/png", f.Data[:1024])
+		if len(f.Data) > 512 {
+			mimetype = http.DetectContentType(f.Data[:512])
 		} else {
-			mimetype = mimemagic.Match("image/png", f.Data)
+			mimetype = http.DetectContentType(f.Data)
 		}
 	} else {
 		mimetype = f.ContentType
