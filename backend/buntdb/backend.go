@@ -71,6 +71,8 @@ func (b *BuntDBBackend) Exists(name string, ctx context.Context) error {
 		_, err := tx.Get("/file/" + name)
 		if err != buntdb.ErrNotFound {
 			return err
+		} else if err == buntdb.ErrNotFound {
+			return common.NewErrorFileNotExists(name, err)
 		}
 		return nil
 	})
@@ -90,6 +92,10 @@ func (b *BuntDBBackend) Get(name string, ctx context.Context) (*common.File, err
 		log.Debug("Unmarshalling file")
 		return json.Unmarshal([]byte(dat), file)
 	})
+
+	if file.Data == nil {
+		file.Data = []byte{}
+	}
 
 	return file, errTx
 }

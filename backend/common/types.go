@@ -106,6 +106,11 @@ func NewErrorFileNotExists(name string, err error) error {
 	}
 }
 
+func IsFileNotExists(err error) bool {
+	_, ok := err.(ErrorFileNotExist)
+	return ok
+}
+
 var (
 	// ErrorNotImplemented is returned if the underlying interface has
 	// not implemented a function. The presence of ErrorNotImplemented is
