@@ -111,7 +111,10 @@ func (n *FCache) Get(flake string, ctx context.Context) (*common.File, error) {
 	if val, err := n.cache.Get(flake); err == nil {
 		log.Debug("Checking if cache contains file (it should)")
 		if f, ok := val.(*common.File); ok {
-			log.Info("Answering request from cache")
+			log.Debug("Answering request from cache")
+			if f.Data == nil {
+				f.Data = []byte{}
+			}
 			return f, nil
 		}
 		log.Error("Cache did not contain file")
