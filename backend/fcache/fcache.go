@@ -74,6 +74,9 @@ func NewFCacheBackend(params map[string]interface{}, ctx context.Context) (commo
 func (n *FCache) Name() string { return driverName }
 
 func (n *FCache) Upload(flake string, file *common.File, ctx context.Context) error {
+	if file.Flake != flake {
+		file.Flake = flake
+	}
 	if !n.asyncUpload {
 		err := n.underlyingBackend.Upload(flake, file, ctx)
 		if err != nil {

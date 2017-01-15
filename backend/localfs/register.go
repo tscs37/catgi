@@ -13,7 +13,7 @@ const (
 	packageName = "localfs"
 )
 
-type localfsConfig struct {
+type LocalFSBackend struct {
 	// The Root Path of the localfs backend. This will be
 	// forced relative unless AbsoluteRoot is set.
 	Root string `mapstructure:"root"`
@@ -29,7 +29,7 @@ func init() {
 func NewLocalFSBackend(params map[string]interface{}, ctx context.Context) (common.Backend, error) {
 	log := logger.LogFromCtx(packageName+".New", ctx)
 
-	var config = &localfsConfig{
+	var config = &LocalFSBackend{
 		Root:         "/localfs/",
 		AbsoluteRoot: false,
 	}
@@ -53,5 +53,5 @@ func NewLocalFSBackend(params map[string]interface{}, ctx context.Context) (comm
 		log.Debug("Config Loading Complete")
 	}
 
-	return nil, common.ErrorNotImplemented
+	return config, config.pingFS()
 }

@@ -4,44 +4,11 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"strings"
 
 	"git.timschuster.info/rls.moe/catgi/backend/common"
 	"git.timschuster.info/rls.moe/catgi/logger"
 	"github.com/kurin/blazer/b2"
 )
-
-// dataName is used to store the raw binary data for a file
-// Format: "file/<flake>/public.json"
-func dataName(flake string) string { return "file/" + splitName(flake) + "/data.bin" }
-
-// metaName is used to store metainformation for a file
-// Format: "file/<flake>/meta.json"
-func metaName(flake string) string { return "file/" + splitName(flake) + "/meta.json" }
-
-// pubName is used to store public flakes for iteration
-// Format: "public/<flake>"
-func pubName(flake string) string { return "public/" + flake }
-
-// clpubName is used to store published names
-// Format: "named/<name>/flakes.json"
-func clpubName(name string) string { return "named/" + name + "/flakes.json" }
-
-func isMetaFile(file string) bool {
-	return strings.HasPrefix(file, "file/") && strings.HasSuffix(file, "/meta.json")
-}
-
-func isDataFile(file string) bool {
-	return strings.HasPrefix(file, "file/") && strings.HasSuffix(file, "/data.bin")
-}
-
-func isPublicFile(file string) bool {
-	return strings.HasPrefix(file, "public/")
-}
-
-func isNamedFile(file string) bool {
-	return strings.HasPrefix(file, "named/") && strings.HasSuffix(file, "/flakes.json")
-}
 
 // writeFile writes raw data into a specified file and logs into a context
 func (b *B2Backend) writeFile(name string, data []byte, ctx context.Context) error {
@@ -109,34 +76,4 @@ func (b *B2Backend) readFile(name string, ctx context.Context) ([]byte, error) {
 	}
 	log.Debugf("Read %d bytes", n)
 	return buffer.Bytes(), nil
-}
-
-// splitName splits a string according to the following rules:
-// 1. Create a slice of strings
-// 2. If the remaining size of the string is larger than skipSize plus 1
-//      then take the first 2 runes and append them as string to the slice
-// 3. If this is not the case, take all remaining runes and append
-//      them to the slice
-// 4. Join all slice elements with "/" inbetween.
-//
-// skipSize is by default 2
-//
-// Example:
-//
-// HelloWorld       =>      He/ll/oW/or/ld
-// HelloInternet    =>      He/ll/oI/nt/er/net
-func splitName(flakeStr string) string {
-	flake := []rune(flakeStr)
-	var out = []string{}
-	skipSize := 2
-	for true {
-		if len(flake) > skipSize+1 {
-			out = append(out, string(flake[0:skipSize]))
-			flake = flake[skipSize:]
-		} else {
-			out = append(out, string(flake))
-			return strings.Join(out, "/")
-		}
-	}
-	panic("Should not terminate here")
 }

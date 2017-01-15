@@ -25,6 +25,12 @@ func (b *BuntDBBackend) Name() string { return "buntdb-backend" }
 
 func (b *BuntDBBackend) Upload(name string, file *common.File, ctx context.Context) error {
 	log := logger.LogFromCtx(bePackagename+".Upload", ctx)
+
+	if file.Flake != name {
+		log.Debug("Flake mismatch, correcting flake in file")
+		file.Flake = name
+	}
+
 	return b.db.Update(func(tx *buntdb.Tx) error {
 		log.Debug("Storing file ", name)
 

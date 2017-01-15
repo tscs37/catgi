@@ -14,6 +14,8 @@ import (
 
 const driverName = "b2"
 const packageName = "backend/b2"
+const skipSize = 2
+const metaFormat = "json"
 
 // Name returns the current drive Name
 func (b *B2Backend) Name() string { return driverName }
@@ -24,8 +26,8 @@ func (b *B2Backend) Upload(flake string, file *common.File, ctx context.Context)
 	log.Debug("Creating object '", flake, "'")
 	file.CreatedAt = common.FromTime(time.Now().UTC())
 	log.Debug("Writing File Data")
-	dataName := dataName(flake)
-	metaName := metaName(flake)
+	dataName := common.DataName(flake, skipSize)
+	metaName := common.MetaName(flake, skipSize, metaFormat)
 	log.Debug("Writing to ", dataName)
 	if err := b.writeFile(dataName, file.Data, ctx); err != nil {
 		log.Error("Error writing data ", err)
@@ -51,8 +53,8 @@ func (b *B2Backend) Upload(flake string, file *common.File, ctx context.Context)
 func (b *B2Backend) Exists(flake string, ctx context.Context) error {
 	log := logger.LogFromCtx(packageName+".Exists", ctx)
 	log.Debug("Getting context and object")
-	dataName := dataName(flake)
-	metaName := metaName(flake)
+	dataName := common.DataName(flake, skipSize)
+	metaName := common.MetaName(flake, skipSize, metaFormat)
 	exists, _, err := b.pingFile(dataName, ctx)
 	if err != nil {
 		return common.NewErrorFileNotExists(flake, err)
@@ -74,8 +76,8 @@ func (b *B2Backend) Exists(flake string, ctx context.Context) error {
 func (b *B2Backend) Get(flake string, ctx context.Context) (*common.File, error) {
 	log := logger.LogFromCtx(packageName+".Exists", ctx).WithField("object", flake)
 	var file = &common.File{}
-	dataName := dataName(flake)
-	metaName := metaName(flake)
+	dataName := common.DataName(flake, skipSize)
+	metaName := common.MetaName(flake, skipSize, metaFormat)
 
 	{
 		log.Debug("Loading Meta File")
@@ -118,8 +120,8 @@ func (b *B2Backend) Get(flake string, ctx context.Context) (*common.File, error)
 
 // Delete empties the file on the B2 backend
 func (b *B2Backend) Delete(flake string, ctx context.Context) error {
-	dataName := dataName(flake)
-	metaName := metaName(flake)
+	dataName := common.DataName(flake, skipSize)
+	metaName := common.MetaName(flake, skipSize, metaFormat)
 
 	err := b.deleteFile(dataName, ctx)
 	if err != nil {
@@ -145,7 +147,7 @@ func (b *B2Backend) ListGlob(ctx context.Context, glob string) ([]*common.File, 
 			return nil, err
 		}
 		for _, obj := range objs {
-			if !isMetaFile(obj.Name()) {
+			if !common.IsMetaFile(obj.Name(), metaFormat) {
 				continue
 			}
 			var dat []byte
