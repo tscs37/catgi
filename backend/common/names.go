@@ -63,7 +63,7 @@ func IsNamedFile(file string) bool {
 //      then take the first 2 runes and append them as string to the slice
 // 3. If this is not the case, take all remaining runes and append
 //      them to the slice
-// 4. Join all slice elements with "/" inbetween.
+// 4. Join all slice elements with "/" between.
 //
 // skipSize is by default 2
 //

@@ -42,7 +42,7 @@ func (b *BuntDBBackend) Upload(name string, file *common.File, ctx context.Conte
 			return err
 		}
 
-		// BuntDB stores the entire file, seperating the data
+		// BuntDB stores the entire file, separating the data
 		// and metadata is not necessary
 		log.Debug("Encode File to JSON")
 		encoded, err := json.Marshal(file)
