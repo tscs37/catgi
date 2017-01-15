@@ -23,9 +23,7 @@ type b2Config struct {
 }
 
 func init() {
-	if err := backend.NewDriver(driverName, NewB2Backend); err != nil {
-		panic(err)
-	}
+	backend.NewDriver(driverName, NewB2Backend)
 }
 
 // NewB2Backend parses the incoming config from the mapstring

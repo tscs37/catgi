@@ -7,6 +7,9 @@ import (
 	"github.com/Sirupsen/logrus"
 )
 
+// LogFromCtx returns a logger with the given source tag.
+// If the context contains a logger it will utilize it as basis.
+// If it contains no logger it will create a new logger.
 func LogFromCtx(src string, ctx context.Context) logrus.FieldLogger {
 	if ctx != nil {
 		if val := ctx.Value("logger"); val != nil {
@@ -23,15 +26,20 @@ func LogFromCtx(src string, ctx context.Context) logrus.FieldLogger {
 	return logrus.New().WithField("src", src).WithField("no-ctx", "")
 }
 
+// NewLoggingContext returns a background context with a logger
 func NewLoggingContext() context.Context {
 	return InjectLogToContext(context.Background())
 }
 
+// InjectLogToContext injects a logger into the context
 func InjectLogToContext(ctx context.Context) context.Context {
 	logs := logrus.New()
 	return context.WithValue(ctx, "logger", logs)
 }
 
+// CreateRequestIDContext creates a snowflake and tags
+// all log messages from that context with it.
+// cmd/catgi uses this to differentiate HTTP requests
 func CreateRequestIDContext(ctx context.Context) context.Context {
 	log := LogFromCtx("cr-req-id", ctx)
 	sf, err := snowflakes.NewSnowflake()
@@ -43,6 +51,9 @@ func CreateRequestIDContext(ctx context.Context) context.Context {
 
 }
 
+// SetLoggingLevel sets the logging level of a logger inside
+// the context.
+// If the logging level is unknown it panics.
 func SetLoggingLevel(level string, ctx context.Context) context.Context {
 	log, ok := ctx.Value("logger").(*logrus.Logger)
 	if !ok {

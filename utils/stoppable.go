@@ -1,3 +1,5 @@
+package utils
+
 /*
 Source of Code: github.com/zet4/catsbutnotreally/utils/stoppable.go
 
@@ -10,13 +12,13 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
-package utils
 
 import (
 	"net"
 	"sync"
 )
 
+// StoppableListener provides a TCP Listener that can be stopped
 type StoppableListener struct {
 	net.Listener
 	Stop      chan bool // Any message to this channel will gracefully stop the server
@@ -34,6 +36,7 @@ type counter struct {
 	c int
 }
 
+// Handle starts accepting connections and waits for stop signal
 func Handle(l net.Listener) (sl *StoppableListener) {
 	sl = &StoppableListener{Listener: l, Stop: make(chan bool, 1)}
 
@@ -48,6 +51,7 @@ func Handle(l net.Listener) (sl *StoppableListener) {
 	return
 }
 
+// Accept handles a new connection
 func (sl *StoppableListener) Accept() (c net.Conn, err error) {
 	c, err = sl.Listener.Accept()
 	if err != nil {

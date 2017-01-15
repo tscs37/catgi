@@ -23,6 +23,11 @@ func init() {
 	hashs = hashids.NewWithData(hd)
 }
 
+// New Snowflake retuns a new unique ID based on a timestamp
+// or an error if there is a problem during encoding
+//
+// Note that these Snowflakes are not cryptographically safe,
+// they are not encrypted, just obfuscated.
 func NewSnowflake() (string, error) {
 	return hashs.EncodeInt64([]int64{fountain.Generate().Int64()})
 }

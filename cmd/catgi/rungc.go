@@ -36,13 +36,13 @@ func (h *handlerRunGC) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(500)
-		err_dat, err := json.Marshal(err)
+		errDat, err := json.Marshal(err)
 		if err != nil {
 			log.Error("Error on error encode: ", err)
 			w.Write([]byte("Critical Server Error"))
 			return
 		}
-		w.Write(err_dat)
+		w.Write(errDat)
 		return
 	}
 
