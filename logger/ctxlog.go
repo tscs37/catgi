@@ -7,10 +7,13 @@ import (
 	"github.com/Sirupsen/logrus"
 )
 
+// Localised Logging interface
+type Logger logrus.FieldLogger
+
 // LogFromCtx returns a logger with the given source tag.
 // If the context contains a logger it will utilize it as basis.
 // If it contains no logger it will create a new logger.
-func LogFromCtx(src string, ctx context.Context) logrus.FieldLogger {
+func LogFromCtx(src string, ctx context.Context) Logger {
 	if ctx != nil {
 		if val := ctx.Value("logger"); val != nil {
 			if log, ok := val.(logrus.FieldLogger); ok {
