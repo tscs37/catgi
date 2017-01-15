@@ -1,17 +1,19 @@
-package common
+package compltest
 
 import (
 	"context"
 	"testing"
 	"time"
 
+	"git.timschuster.info/rls.moe/catgi/backend"
+	"git.timschuster.info/rls.moe/catgi/backend/common"
 	"git.timschuster.info/rls.moe/catgi/logger"
 	"github.com/stretchr/testify/assert"
 )
 
 // RunTestSuite will run a test suite over the Backend
 // to ensure it properly functions as defined
-func RunTestSuite(b Backend, t *testing.T) {
+func RunTestSuite(b common.Backend, t *testing.T) {
 	testGetNonExist(b, t)
 	testUploadEmpty(b, t)
 	testUploadNonEmpty(b, t)
@@ -24,35 +26,46 @@ func GetTestCtx() context.Context {
 	ctx = logger.InjectLogToContext(ctx)
 	return ctx
 }
-func testGetNonExist(b Backend, t *testing.T) {
+
+func testRegistration(b common.Backend, t *testing.T) {
+	for _, v := range backend.InstalledDrivers() {
+		if v == b.Name() {
+			return
+		}
+	}
+	t.Error("Driver did not register on import")
+	t.Fail()
+}
+
+func testGetNonExist(b common.Backend, t *testing.T) {
 	ctx := GetTestCtx()
 	assert := assert.New(t)
 
 	err := b.Exists("non-exist", ctx)
 
 	assert.Error(err, "Non existant file must return error")
-	assert.True(IsFileNotExists(err), "Error must recognized as ErrorFileNotExist error")
+	assert.True(common.IsFileNotExists(err), "Error must recognized as ErrorFileNotExist error")
 }
 
-func testUploadEmpty(b Backend, t *testing.T) {
+func testUploadEmpty(b common.Backend, t *testing.T) {
 	ctx := GetTestCtx()
 	assert := assert.New(t)
 
-	empty := &File{}
+	empty := &common.File{}
 	err := b.Upload("empty-test-file", empty, ctx)
 
 	assert.NoError(err, "Empty files must be uploadable")
 }
 
-func testUploadNonEmpty(b Backend, t *testing.T) {
+func testUploadNonEmpty(b common.Backend, t *testing.T) {
 	ctx := GetTestCtx()
 	assert := assert.New(t)
 
-	file := &File{}
+	file := &common.File{}
 	file.ContentType = "text/html"
-	file.CreatedAt = FromTime(time.Now())
+	file.CreatedAt = common.FromTime(time.Now())
 	file.Data = []byte("<html>test</html>")
-	file.DeleteAt = FromTime(time.Now().AddDate(100, 11, 200))
+	file.DeleteAt = common.FromTime(time.Now().AddDate(100, 11, 200))
 	file.FileExtension = ".html"
 	file.Flake = "index.html"
 	file.Public = false
@@ -63,7 +76,7 @@ func testUploadNonEmpty(b Backend, t *testing.T) {
 	assert.NoError(err, "Uploading non-empty file must not return error")
 }
 
-func testGetEmpty(b Backend, t *testing.T) {
+func testGetEmpty(b common.Backend, t *testing.T) {
 	ctx := GetTestCtx()
 	assert := assert.New(t)
 	file, err := b.Get("empty-test-file", ctx)

@@ -3,11 +3,11 @@ package buntdb
 import (
 	"testing"
 
-	"git.timschuster.info/rls.moe/catgi/backend/common"
+	"git.timschuster.info/rls.moe/catgi/backend/compl_test"
 )
 
 func TestCompliance(t *testing.T) {
-	ctx := common.GetTestCtx()
+	ctx := compltest.GetTestCtx()
 	inmemDB, err := NewBuntDBBackend(map[string]interface{}{
 		"file": ":memory:",
 	}, ctx)
@@ -18,5 +18,5 @@ func TestCompliance(t *testing.T) {
 		return
 	}
 
-	common.RunTestSuite(inmemDB, t)
+	compltest.RunTestSuite(inmemDB, t)
 }

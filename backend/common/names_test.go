@@ -39,10 +39,30 @@ func TestDataName(t *testing.T) {
 
 func TestMetaName(t *testing.T) {
 	assert := assert.New(t)
+
 	form := "json"
 	dn := MetaName("ThisIsATest", 2, form)
 	assert.EqualValues("file/Th/is/Is/AT/est/meta."+form, dn)
 	assert.True(IsMetaFile(dn, form))
 	assert.False(IsMetaFile(dn[1:], form))
 	assert.False(IsMetaFile(dn[:len(dn)-1], form))
+}
+
+func TestPubName(t *testing.T) {
+	assert := assert.New(t)
+
+	dn := PubName("ThisIsATest", 2)
+	assert.EqualValues("public/Th/is/Is/AT/est", dn)
+	assert.True(IsPublicFile(dn))
+	assert.False(IsPublicFile(dn[1:]))
+}
+
+func TestClearPubName(t *testing.T) {
+	assert := assert.New(t)
+
+	dn := ClearPubName("ThisIsATest", 2)
+	assert.EqualValues("named/Th/is/Is/AT/est/flakes.json", dn)
+	assert.True(IsNamedFile(dn))
+	assert.False(IsNamedFile(dn[1:]))
+	assert.False(IsNamedFile(dn[:len(dn)-1]))
 }

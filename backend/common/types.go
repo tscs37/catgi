@@ -92,14 +92,14 @@ type ErrorFileNotExist struct {
 
 // Error returns a nested Error Message regarding a missing file
 func (e ErrorFileNotExist) Error() string {
-	return "ErrFileNotExist(" + e.Object + "): " + e.InnerError.Error()
+	if e.InnerError != nil {
+		return "ErrFileNotExist(" + e.Object + "): " + e.InnerError.Error()
+	}
+	return "ErrFileNotExist(" + e.Object + ")"
 }
 
 // NewErrorFileNotExists returns a ErrFileNotExist typed error.
 func NewErrorFileNotExists(name string, err error) error {
-	if err == nil {
-		err = errors.New("generic file not exist")
-	}
 	return ErrorFileNotExist{
 		Object:     name,
 		InnerError: err,

@@ -74,7 +74,7 @@ func IsNamedFile(file string) bool {
 func SplitName(flakeStr string, skipSize int) string {
 	flake := []rune(flakeStr)
 	var out = []string{}
-	for true {
+	for {
 		if len(flake) > skipSize+1 {
 			out = append(out, string(flake[0:skipSize]))
 			flake = flake[skipSize:]
@@ -83,5 +83,4 @@ func SplitName(flakeStr string, skipSize int) string {
 			return strings.Join(out, "/")
 		}
 	}
-	panic("Should not terminate here")
 }
