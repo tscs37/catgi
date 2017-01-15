@@ -74,6 +74,10 @@ func NewFCacheBackend(params map[string]interface{}, ctx context.Context) (commo
 func (n *FCache) Name() string { return driverName }
 
 func (n *FCache) Upload(flake string, file *common.File, ctx context.Context) error {
+	if file == nil {
+		return common.ErrorSerializationFailure
+	}
+
 	if file.Flake != flake {
 		file.Flake = flake
 	}
@@ -132,7 +136,13 @@ func (n *FCache) Get(flake string, ctx context.Context) (*common.File, error) {
 }
 
 func (n *FCache) Delete(flake string, ctx context.Context) error {
-	defer n.cache.Remove(flake)
+	defer func(flake string, ctx context.Context) {
+		i, err := n.cache.Get(flake)
+		if err != nil {
+			return
+		}
+		n.cache.Remove(i)
+	}(flake, ctx)
 	return n.underlyingBackend.Delete(flake, ctx)
 }
 

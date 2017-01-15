@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
 // Backend allows the server to retrieve single files based on snowflake
@@ -126,11 +128,16 @@ var (
 	// ErrorIncompleteWrite is returned when the underlying data was not
 	// written to the backend entirely and may be in an inconsistent state.
 	ErrorIncompleteWrite = errors.New("Backend could not complete write")
-	// ErrorIndexNoSerialize is returned by index.Serialize() or index.Unserialize() when they
-	// are not to be stored in the backend
-	ErrorIndexNoSerialize = errors.New("Do not serialize this index")
+	// ErrorFileExists is returned when the backend tried to upload
+	// a file over an existing one.
+	ErrorFileExists = errors.New("File already present in backend")
+	// ErrorSerializationFailure is returned when the given file
+	// could not be serialized and no other error information is available.
+	ErrorSerializationFailure = errors.New("Could not serialize file data")
 )
 
+// DateOnlyTime provides a time.Time construct with a 24 Hour
+// precision after parsing.
 type DateOnlyTime struct {
 	time.Time
 }
@@ -146,7 +153,7 @@ func (dot *DateOnlyTime) UnmarshalJSON(b []byte) (err error) {
 	if err != nil {
 		return err
 	}
-	dot.Time = t
+	dot.Time = t.UTC()
 	return nil
 }
 
@@ -154,6 +161,19 @@ func (dot *DateOnlyTime) MarshalJSON() ([]byte, error) {
 	s := dot.Format("2006-01-02")
 	s = fmt.Sprintf("\"%s\"", s)
 	return []byte(s), nil
+}
+
+func (dot *DateOnlyTime) EncodeMsgpack(enc *msgpack.Encoder) error {
+	return enc.EncodeInt64(dot.Unix())
+}
+
+func (dot *DateOnlyTime) DecodeMsgpack(dec *msgpack.Decoder) error {
+	dotunix, err := dec.DecodeInt64()
+	if err != nil {
+		return err
+	}
+	dot.Time = time.Unix(dotunix, 0).UTC()
+	return nil
 }
 
 func (dot *DateOnlyTime) TTL() time.Duration {
@@ -168,7 +188,7 @@ func (dot *DateOnlyTime) TTL() time.Duration {
 
 func FromTime(t time.Time) *DateOnlyTime {
 	return &DateOnlyTime{
-		Time: t,
+		Time: t.UTC().Truncate(24 * time.Hour),
 	}
 }
 

@@ -26,6 +26,10 @@ func (b *BuntDBBackend) Name() string { return "buntdb-backend" }
 func (b *BuntDBBackend) Upload(name string, file *common.File, ctx context.Context) error {
 	log := logger.LogFromCtx(bePackagename+".Upload", ctx)
 
+	if file == nil {
+		return common.ErrorSerializationFailure
+	}
+
 	if file.Flake != name {
 		log.Debug("Flake mismatch, correcting flake in file")
 		file.Flake = name
@@ -117,7 +121,7 @@ func (b *BuntDBBackend) ListGlob(ctx context.Context, prefix string) ([]*common.
 	log := logger.LogFromCtx(bePackagename+".ListGlob", ctx)
 	files := make([]*common.File, 0)
 	b.db.View(func(tx *buntdb.Tx) error {
-		return tx.AscendKeys("/file/"+prefix+"*", func(key, value string) bool {
+		return tx.AscendKeys("/file/"+prefix, func(key, value string) bool {
 			var next = &common.File{}
 			err := json.Unmarshal([]byte(value), next)
 			if err != nil {
@@ -150,6 +154,10 @@ func (b *BuntDBBackend) RunGC(ctx context.Context) ([]common.File, error) {
 
 	log.Debug("Scanning for files to be deleted")
 	for _, v := range fPtrs {
+		if v.DeleteAt == nil {
+			log.Warn("File contains NIL DeleteAt: ", v.Flake)
+			continue
+		}
 		if v.DeleteAt.TTL() <= 0 {
 			log.Debug("Scheduling ", v.Flake, " for deletion")
 			v.Data = []byte{}
@@ -165,6 +173,10 @@ func (b *BuntDBBackend) RunGC(ctx context.Context) ([]common.File, error) {
 	log.Debugf("Deleting files")
 	for _, v := range deletedFiles {
 		log.Debug("Starting delete for ", v.Flake)
+		if common.IsFileNotExists(b.Exists(v.Flake, ctx)) {
+			log.Debug("Flake already expired, skipping")
+			continue
+		}
 		err := b.Delete(v.Flake, ctx)
 		if err != nil {
 			log.Debug("Error while deleting flake ", v.Flake)

@@ -17,6 +17,12 @@ func DataName(flake string, skipSize int) string {
 	return "file/" + SplitName(flake, skipSize) + "/data.bin"
 }
 
+// FileName returns the path used for storing metadata and filedata
+// at the same lookup. Relevant backends: BuntDB, LocalFS
+func FileName(flake, format string, skipSize int) string {
+	return "file/" + SplitName(flake, skipSize) + "/file." + format
+}
+
 // MetaName returns the path that is used to store metainformation for a file
 // Format: "file/<flake>/meta.json"
 func MetaName(flake string, skipSize int, format string) string {
@@ -40,6 +46,10 @@ func ClearPubName(name string, skipSize int) string {
 // IsMetaFile returns true if the filename matches that of a Meta File
 func IsMetaFile(file, format string) bool {
 	return strings.HasPrefix(file, "file/") && strings.HasSuffix(file, "/meta."+format)
+}
+
+func IsFullFile(file, format string) bool {
+	return strings.HasPrefix(file, "file/") && strings.HasSuffix(file, "/file."+format)
 }
 
 // IsDataFile returns true if the filename matches that of a Data File

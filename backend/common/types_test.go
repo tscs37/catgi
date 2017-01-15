@@ -52,10 +52,15 @@ func TestDOTWrongFormat(t *testing.T) {
 func TestDOTTTL(t *testing.T) {
 	assert := assert.New(t)
 
-	dot := FromTime(time.Now().AddDate(0, 0, 1))
-	assert.EqualValues(1*24*60*60*time.Second, dot.TTL())
+	today := time.Now()
+	tomorrow := today.AddDate(0, 0, 1)
+
+	dot := FromTime(tomorrow)
+
+	assert.EqualValues(time.Duration(dot.Unix()-time.Now().UTC().Unix())*time.Second, dot.TTL())
 
 	dot = FromTime(time.Now().AddDate(-1, -1, -1))
+
 	assert.EqualValues(0, dot.TTL())
 }
 
