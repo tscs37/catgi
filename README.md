@@ -8,6 +8,9 @@ CatGi is a pluggable, extensible and selfhosted provider of images, text and mor
 The App does not rely on any configuration and operates
 as an in-memory testable filestore until a config is specified.
 
+At the moment files can be stored for up to 1 month and no longer.
+Permanent storage is a goal for a future release.
+
 ## Usage
 
 CatGi requires [govendor](https://github.com/kardianos/govendor) to be build.
@@ -111,8 +114,6 @@ Dependencies are under their respective license and copyright.
 
 Pull requests should be well formatted.
 
-New Backends are required to implement everything but `ListGlob`.
-
 HTML should be kept to minimal filesize, CSS or JS should be avoided.
 
 Pull Request will be accepted from any of the code mirrors.
@@ -130,8 +131,10 @@ things:
 
     * Public Gallery
     * Automatic Garbage Collection (Manual GC works now)
+    * Permanent Files
+    * Named Publishing (eg `catgi.rls.moe/n/helloworld.txt`)
 
-These are very low priority so I'm going to do them whenever I find time
-myself.
+I have a few other features planned to, like S3 and GCS support,
+federating across servers and much more.
 
 Pull Requests for additional features are welcome.
