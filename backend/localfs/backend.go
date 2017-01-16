@@ -169,47 +169,7 @@ func (l *LocalFSBackend) ListGlob(ctx context.Context, glob string) ([]*common.F
 }
 
 func (l *LocalFSBackend) RunGC(ctx context.Context) ([]common.File, error) {
-	log := logger.LogFromCtx(packageName+".RunGC", ctx)
-
-	var deletedFiles = []common.File{}
-
-	log.Debug("Obtaining file list from backend")
-	fPtrs, err := l.ListGlob(ctx, "*")
-	if err != nil {
-		log.Error("Error on Obtaining List: ", err)
-		return nil, err
-	}
-
-	log.Debugf("About to clean %d files", len(fPtrs))
-
-	for _, v := range fPtrs {
-		if v.DeleteAt == nil {
-			log.Warn("File contains NIL DeleteAt: ", v.Flake)
-			continue
-		}
-		if v.DeleteAt.TTL() <= 0 {
-			log.Debug("Scheduling ", v.Flake, " for deletion")
-			v.Data = []byte{}
-			deletedFiles = append(deletedFiles, *v)
-		}
-	}
-
-	for _, v := range deletedFiles {
-		log.Debug("Starting delete for ", v.Flake)
-		if common.IsFileNotExists(l.Exists(v.Flake, ctx)) {
-			log.Debug("Flake already expired, skipping")
-			continue
-		}
-		err := l.Delete(v.Flake, ctx)
-		if err != nil {
-			log.Debug("Error while deleting flake ", v.Flake)
-			return deletedFiles, err
-		}
-	}
-
-	log.Debugf("Deleted %d flakes", len(deletedFiles))
-
-	return deletedFiles, nil
+	return common.GenericGC(l, nil, nil, ctx)
 }
 
 // pingFS checks if the root exists and is writable.

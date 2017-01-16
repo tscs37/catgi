@@ -172,36 +172,5 @@ func (b *B2Backend) ListGlob(ctx context.Context, glob string) ([]*common.File, 
 }
 
 func (b *B2Backend) RunGC(ctx context.Context) ([]common.File, error) {
-	log := logger.LogFromCtx(packageName+".RunGC", ctx)
-	var deletedFiles = []common.File{}
-
-	log.Info("Obtaining file list from backend")
-	fPtrs, err := b.ListGlob(ctx, "*")
-	if err != nil {
-		return nil, err
-	}
-
-	log.Info("Scanning for files to be deleted")
-	for _, v := range fPtrs {
-		if v.DeleteAt.After(time.Now().UTC()) {
-			log.Debug("Scheduling ", v.Flake, " for deletion")
-			deletedFiles = append(deletedFiles, *v)
-		}
-	}
-
-	// Deletion is put into a second step to A) speed up scan and B)
-	// be more resilient (we can return a full list of maybe GC'd data)
-	//
-	// Making a second run and comparing the returned lists may reveal
-	// some error points.
-	log.Info("Deleting files")
-	for _, v := range fPtrs {
-		err := b.Delete(v.Flake, ctx)
-		if err != nil {
-			log.Debug("Deleting flake ", v.Flake)
-			return deletedFiles, err
-		}
-	}
-
-	return deletedFiles, nil
+	return common.GenericGC(b, nil, nil, ctx)
 }
