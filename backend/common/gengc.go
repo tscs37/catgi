@@ -18,7 +18,7 @@ import (
 // The Hooks will only run if they are non-nil, if they are nil
 // they are ignored.
 func GenericGC(b Backend,
-	preHook, postHook func(Backend) error,
+	preHook, postHook func(Backend, logger.Logger) error,
 	ctx context.Context) ([]File, error) {
 
 	log := logger.LogFromCtx("GenericGC."+b.Name()+".RunGC", ctx)
@@ -26,7 +26,7 @@ func GenericGC(b Backend,
 	if preHook != nil {
 		log.Debug("Running PreHook")
 
-		err := preHook(b)
+		err := preHook(b, log)
 		if err != nil {
 			log.Error("Error in GC PreHook")
 			return nil, err
@@ -69,7 +69,7 @@ func GenericGC(b Backend,
 			log.Debug("Flake already expired, skipping")
 			continue
 		}
-		err := b.Delete(v.Flake, ctx)
+		err = b.Delete(v.Flake, ctx)
 		if err != nil {
 			log.Debug("Error while deleting flake ", v.Flake)
 			return deletedFiles, err
@@ -81,7 +81,7 @@ func GenericGC(b Backend,
 	if postHook != nil {
 		log.Debug("Running PostHook")
 
-		err = postHook(b)
+		err = postHook(b.log)
 		if err != nil {
 			log.Error("Error in GC PostHook")
 			return deletedFiles, err

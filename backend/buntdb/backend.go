@@ -10,7 +10,6 @@ import (
 	"git.timschuster.info/rls.moe/catgi/backend/common"
 	"git.timschuster.info/rls.moe/catgi/logger"
 	"github.com/Sirupsen/logrus"
-	"github.com/labstack/gommon/log"
 	"github.com/tidwall/buntdb"
 )
 
@@ -141,7 +140,7 @@ func (b *BuntDBBackend) ListGlob(ctx context.Context, prefix string) ([]*common.
 // this but this should cleanup any orphaned entries.
 // TODO: Remove once automatic expiry is properly tested
 func (b *BuntDBBackend) RunGC(ctx context.Context) ([]common.File, error) {
-	return common.GenericGC(b, nil, func(_ common.Backend) error {
+	return common.GenericGC(b, nil, func(_ common.Backend, log logger.Logger) error {
 		log.Debugf("Shrunk DB by %d bytes", b.shrink(ctx))
 		return nil
 	}, ctx)
