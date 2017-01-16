@@ -21,7 +21,6 @@ import (
 )
 
 var (
-	curBe  backend.Backend
 	curCfg config.Configuration
 )
 
@@ -62,7 +61,6 @@ func main() {
 		log.Errorf("Error: %s", err)
 		return
 	}
-	curBe = be
 	log.Infof("Loaded '%s' Backend Driver", be.Name())
 
 	piwik := newHandlerPiwik(curCfg.Piwik.Base, curCfg.Piwik.ID,
@@ -73,7 +71,7 @@ func main() {
 		fileGetHandler := newHandlerInjectLog(
 			piwik(
 				newHandlerCheckToken(true,
-					newHandlerServeGet(),
+					newHandlerServeGet(be),
 				),
 			),
 		)
@@ -99,7 +97,7 @@ func main() {
 		newHandlerInjectLog(
 			piwik(
 				newHandlerCheckToken(false,
-					newHandlerServePost(),
+					newHandlerServePost(be),
 				),
 			),
 		),
@@ -108,7 +106,7 @@ func main() {
 	router.Handle("/gc",
 		newHandlerInjectLog(
 			newHandlerCheckToken(false,
-				newHandlerRunGC(),
+				newHandlerRunGC(be),
 			),
 		),
 	).Methods("GET")

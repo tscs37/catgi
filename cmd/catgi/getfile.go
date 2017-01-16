@@ -8,14 +8,19 @@ import (
 
 	"bytes"
 
+	"git.timschuster.info/rls.moe/catgi/backend/common"
 	"git.timschuster.info/rls.moe/catgi/logger"
 	"github.com/gorilla/mux"
 )
 
-type handlerServeGet struct{}
+type handlerServeGet struct {
+	backend common.Backend
+}
 
-func newHandlerServeGet() http.Handler {
-	return &handlerServeGet{}
+func newHandlerServeGet(b common.Backend) http.Handler {
+	return &handlerServeGet{
+		backend: b,
+	}
 }
 
 func (h *handlerServeGet) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
@@ -32,7 +37,7 @@ func (h *handlerServeGet) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Debug("Loading File from Backend")
-	f, err := curBe.Get(flake, r.Context())
+	f, err := h.backend.Get(flake, r.Context())
 	if err != nil {
 		log.Warn("File error on backend: ", err)
 		rw.WriteHeader(404)
