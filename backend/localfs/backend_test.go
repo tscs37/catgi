@@ -27,6 +27,6 @@ func TestCompliance(t *testing.T) {
 		return
 	}
 
-	t.Skip("Skipping test due to incomplete implementation.")
+	//t.Skip("Skipping test due to incomplete implementation.")
 	compltest.RunTestSuite(localfs, t)
 }

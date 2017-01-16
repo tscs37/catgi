@@ -137,11 +137,79 @@ func (l *LocalFSBackend) Delete(name string, ctx context.Context) error {
 }
 
 func (l *LocalFSBackend) ListGlob(ctx context.Context, glob string) ([]*common.File, error) {
-	return nil, common.ErrorNotImplemented
+	name := common.EscapeName(glob)
+
+	filePath := l.getPath(name)
+
+	l.rwlock.RLock()
+	defer l.rwlock.RUnlock()
+
+	matches, err := filepath.Glob(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	var retList = []*common.File{}
+
+	for _, v := range matches {
+		dat, err := ioutil.ReadFile(v)
+		if err != nil {
+			return retList, err
+		}
+		var file = &common.File{}
+		err = msgpack.Unmarshal(dat, file)
+		if err != nil {
+			return retList, err
+		}
+		file.Data = []byte{}
+		retList = append(retList, file)
+	}
+
+	return retList, nil
 }
 
 func (l *LocalFSBackend) RunGC(ctx context.Context) ([]common.File, error) {
-	return nil, common.ErrorNotImplemented
+	log := logger.LogFromCtx(packageName+".RunGC", ctx)
+
+	var deletedFiles = []common.File{}
+
+	log.Debug("Obtaining file list from backend")
+	fPtrs, err := l.ListGlob(ctx, "*")
+	if err != nil {
+		log.Error("Error on Obtaining List: ", err)
+		return nil, err
+	}
+
+	log.Debugf("About to clean %d files", len(fPtrs))
+
+	for _, v := range fPtrs {
+		if v.DeleteAt == nil {
+			log.Warn("File contains NIL DeleteAt: ", v.Flake)
+			continue
+		}
+		if v.DeleteAt.TTL() <= 0 {
+			log.Debug("Scheduling ", v.Flake, " for deletion")
+			v.Data = []byte{}
+			deletedFiles = append(deletedFiles, *v)
+		}
+	}
+
+	for _, v := range deletedFiles {
+		log.Debug("Starting delete for ", v.Flake)
+		if common.IsFileNotExists(l.Exists(v.Flake, ctx)) {
+			log.Debug("Flake already expired, skipping")
+			continue
+		}
+		err := l.Delete(v.Flake, ctx)
+		if err != nil {
+			log.Debug("Error while deleting flake ", v.Flake)
+			return deletedFiles, err
+		}
+	}
+
+	log.Debugf("Deleted %d flakes", len(deletedFiles))
+
+	return deletedFiles, nil
 }
 
 // pingFS checks if the root exists and is writable.
@@ -181,5 +249,12 @@ func (l *LocalFSBackend) getPath(name string) string {
 
 	fileName := common.FileName(name, "msgpack", 2)
 
-	return filepath.Join(l.Root, fileName)
+	if !l.AbsoluteRoot {
+		wd, err := os.Getwd()
+		if err != nil {
+			wd = "."
+		}
+		return filepath.Join(wd, l.Root, fileName)
+	}
+	return filepath.Join("/", l.Root, fileName)
 }
