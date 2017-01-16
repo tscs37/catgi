@@ -81,7 +81,7 @@ func GenericGC(b Backend,
 	if postHook != nil {
 		log.Debug("Running PostHook")
 
-		err = postHook(b.log)
+		err = postHook(b, log)
 		if err != nil {
 			log.Error("Error in GC PostHook")
 			return deletedFiles, err
