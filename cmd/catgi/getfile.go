@@ -42,15 +42,6 @@ func (h *handlerServeGet) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 	log.Debug("Writing out response")
 
-	var filename = flake + f.FileExtension
-	{
-		if name, ok := vars["name"]; ok {
-			if ext, ok := vars["ext"]; ok {
-				filename = name + "." + ext
-			}
-		}
-	}
-
 	if r.URL.Query().Get("raw") == "1" {
 		rw.Header().Add("Content-Type", "application/json")
 		var dat []byte
