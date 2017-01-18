@@ -106,12 +106,12 @@ Other backends might required differing configuration.
 
 ### Available backends
 
-| Name         | Driver Name |  Notes
-|--------------|-------------|-
-| B2Backblaze  | `b2`        | No automatic GC and rather slow
-| BuntDB       | `buntdb`    | Automatic GC and fast
-| FCache       | `fcache`    | Caching Backend, not standalone
-| LocalFS      | `localfs`   | Stores in Filesystem
+| Name         | Driver Name |  Notes                          |
+|--------------|-------------|---------------------------------|
+| B2Backblaze  | `b2`        | No automatic GC and rather slow |
+| BuntDB       | `buntdb`    | Automatic GC and fast           |
+| FCache       | `fcache`    | Caching Backend, not standalone |
+| LocalFS      | `localfs`   | Stores in Filesystem            |
 
 ## License
 
