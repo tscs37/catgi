@@ -6,13 +6,14 @@ import (
 )
 
 type Configuration struct {
-	Backend  DriverConfig `json:"backend"`
-	Index    DriverConfig `json:"index"`
-	HMACKey  string       `json:"jwtkey"`
-	Users    []UserConfig `json:"users"`
-	HTTPConf HTTPConfig   `json:"http"`
-	LogLevel string       `json:"loglevel"`
-	Piwik    PiwikConfig  `json:"piwik"`
+	Backend    DriverConfig `json:"backend"`
+	Index      DriverConfig `json:"index"`
+	HMACKey    string       `json:"jwtkey"`
+	Users      []UserConfig `json:"users"`
+	IgnoreAuth bool         `json:"ignore_login"`
+	HTTPConf   HTTPConfig   `json:"http"`
+	LogLevel   string       `json:"loglevel"`
+	Piwik      PiwikConfig  `json:"piwik"`
 }
 
 type PiwikConfig struct {
