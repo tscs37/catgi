@@ -18,7 +18,7 @@ func VerifyPassword(user, pass string, conf config.Configuration) error {
 				_, err := passlib.Verify(pass, v.PassHash)
 				return err
 			case config.ATDropbox:
-				isValid := password.IsValid(pass, v.PassHash, conf.HMACKey)
+				isValid := password.IsValid(pass, v.PassHash, conf.Pepper)
 				if isValid {
 					return nil
 				}

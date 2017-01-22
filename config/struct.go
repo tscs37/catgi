@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 )
 
@@ -9,6 +10,7 @@ type Configuration struct {
 	Backend    DriverConfig `json:"backend"`
 	Index      DriverConfig `json:"index"`
 	HMACKey    string       `json:"jwtkey"`
+	Pepper     string       `json:"password_pepper"`
 	Users      []UserConfig `json:"users"`
 	IgnoreAuth bool         `json:"ignore_login"`
 	HTTPConf   HTTPConfig   `json:"http"`
@@ -54,6 +56,9 @@ func LoadConfig(path string) (Configuration, error) {
 	}
 	if err := json.Unmarshal(dat, &c); err != nil {
 		return c, err
+	}
+	if len(c.Pepper) > 0 && len(c.Pepper) != 32 {
+		return c, errors.New("Pepper must be 32 characters")
 	}
 	return c, nil
 }

@@ -21,7 +21,7 @@ func main() {
 	if pepper := os.Getenv("CATGI_PEPPER"); len(pepper) == 32 {
 		fmt.Print("--- DROPBOX MD ---\n")
 		fmt.Print("--- INPUT USER ---\n")
-		fmt.Printf("Pepper  : %x\n", pepper)
+		fmt.Printf("Pepper  : %s\n", pepper)
 		fmt.Print("Username: ")
 		fmt.Scanln(&(user.Username))
 		fmt.Print("Password: ")
@@ -38,6 +38,10 @@ func main() {
 		}
 		user.PassHash = hash
 		user.AuthType = config.ATDropbox
+	} else if len(pepper) > 0 && len(pepper) != 32 {
+		fmt.Print("--- DROPBOX MD ---\n")
+		fmt.Print("Pepper is not 32 characters, aborting.")
+		return
 	} else {
 		fmt.Print("--- LEGACY  MD ---\n")
 		printLegacyBanner()
@@ -70,12 +74,9 @@ func main() {
 }
 
 func printLegacyBanner() {
-	// TODO Activate legacy banner once catgi supports dropbox auth
-	/*
-		fmt.Println("makepass is running in legacy mode. You can")
-		fmt.Println("use legacy mode to continue using old versions")
-		fmt.Println("of catgi. It is recommended you use the")
-		fmt.Println("CATGI_PEPPER environment variable to set")
-		fmt.Println("a pepper for password encryption.")
-	*/
+	fmt.Println("makepass is running in legacy mode. You can")
+	fmt.Println("use legacy mode to continue using old versions")
+	fmt.Println("of catgi. It is recommended you use the")
+	fmt.Println("CATGI_PEPPER environment variable to set")
+	fmt.Println("a pepper for password encryption.")
 }
