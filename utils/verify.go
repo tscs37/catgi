@@ -18,6 +18,9 @@ func VerifyPassword(user, pass string, conf config.Configuration) error {
 				_, err := passlib.Verify(pass, v.PassHash)
 				return err
 			case config.ATDropbox:
+				if len(conf.Pepper) != 32 {
+					return errors.New("Pepper corrupt or missing")
+				}
 				isValid := password.IsValid(pass, v.PassHash, conf.Pepper)
 				if isValid {
 					return nil

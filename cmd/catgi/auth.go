@@ -39,7 +39,7 @@ func (h *handlerServeAuth) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	err = utils.VerifyPassword(user, pass, curCfg)
 	if err != nil {
-		log.Warn("Wrong password attempt for user ", user)
+		log.Warn("Wrong password attempt for user ", user, ": ", err)
 		w.WriteHeader(401)
 		fmt.Fprint(w, "401 - Not Authorized")
 		return
