@@ -21,6 +21,14 @@
 			"revisionTime": "2016-08-29T20:23:21Z"
 		},
 		{
+			"path": "github.com/aws/aws-sdk-go/service/s3",
+			"revision": ""
+		},
+		{
+			"path": "github.com/aws/aws-sk-go/service/s3",
+			"revision": ""
+		},
+		{
 			"checksumSHA1": "h/y88wOmQRm6qE29txL9LndV1yY=",
 			"path": "github.com/bluele/gcache",
 			"revision": "d920a928be099e4b9a6272f41699f4693cdcee5b",
