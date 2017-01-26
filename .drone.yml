@@ -1,0 +1,13 @@
+pipeline:
+  clone:
+    image: plugins/git 
+    skip_verify: true
+  build:
+    image: golang:1.7
+    commands:
+      - ln -s /drone/src/$DRONE_REPO/ $GOPATH/src/$DRONE_REPO
+      - go get github.com/kardianos/govendor
+      - "$GOPATH/bin/govendor sync -v"
+      - "$GOPATH/bin/govendor test -cover -v +local
+      - cd cmd/catgi && go build; cd ../..
+      - cd cmd/makepass && go build; cd ../..
