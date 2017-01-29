@@ -10,6 +10,7 @@ import (
 
 	"git.timschuster.info/rls.moe/catgi/backend/common"
 	"git.timschuster.info/rls.moe/catgi/logger"
+	"git.timschuster.info/rls.moe/catgi/utils"
 	"github.com/gorilla/mux"
 )
 
@@ -36,13 +37,25 @@ func (h *handlerServeGet) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	r = r.WithContext(utils.PutHTTPIntoContext(r, r.Context()))
+
+	// <- BEGIN BACKEND INTERACTION ->
 	log.Debug("Loading File from Backend")
 	f, err := h.backend.Get(flake, r.Context())
-	if err != nil {
+	// -> END BACKEND INTERACTIOn <-
+
+	if err != nil && !common.IsHTTPOption(err) {
 		log.Warn("File error on backend: ", err)
 		rw.WriteHeader(404)
 		fmt.Fprint(rw, "Could not find file")
 		return
+	} else if common.IsHTTPOption(err) {
+		httpopt := err.(common.ErrorHTTPOptions)
+		httpopt.PassOverHTTP(rw)
+		if httpopt.WantsTakeover() {
+			httpopt.HTTPTakeover(r, rw, r.Context())
+			return
+		}
 	}
 
 	log.Debug("Writing out response")

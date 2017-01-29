@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"time"
 
 	"gopkg.in/vmihailenco/msgpack.v2"
@@ -118,6 +119,10 @@ type File struct {
 	FileExtension string `json:"ext,omitempty"`
 	// Username of who uploaded the file
 	User string `json:"usr,omitempty"`
+	// Options is a list of file options
+	// This may be altered by the backend to indicate
+	// certain file conditions
+	Options []string `json:"opts,omitempty"`
 }
 
 // DefaultTTL is the default Time-to-Live of new Objects
@@ -162,6 +167,37 @@ func NewErrorFileNotExists(name string, err error) error {
 
 func IsFileNotExists(err error) bool {
 	_, ok := err.(ErrorFileNotExist)
+	return ok
+}
+
+type ErrorHTTPOptions struct {
+	Cookies      []*http.Cookie
+	Headers      map[string]string
+	HTTPTakeover func(r *http.Request, w http.ResponseWriter, ctx context.Context)
+}
+
+func (e ErrorHTTPOptions) Error() string {
+	return "Frontend does not accept HTTP Options"
+}
+
+func (e ErrorHTTPOptions) PassOverHTTP(w http.ResponseWriter) {
+	for _, cookie := range e.Cookies {
+		http.SetCookie(w, cookie)
+	}
+	for name, value := range e.Headers {
+		w.Header().Add(name, value)
+	}
+}
+
+func (e ErrorHTTPOptions) WantsTakeover() bool {
+	if e.HTTPTakeover != nil {
+		return true
+	}
+	return false
+}
+
+func IsHTTPOption(err error) bool {
+	_, ok := err.(ErrorHTTPOptions)
 	return ok
 }
 
