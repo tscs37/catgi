@@ -25,10 +25,6 @@
 			"revision": ""
 		},
 		{
-			"path": "github.com/aws/aws-sk-go/service/s3",
-			"revision": ""
-		},
-		{
 			"checksumSHA1": "h/y88wOmQRm6qE29txL9LndV1yY=",
 			"path": "github.com/bluele/gcache",
 			"revision": "d920a928be099e4b9a6272f41699f4693cdcee5b",
@@ -131,32 +127,8 @@
 			"revisionTime": "2016-09-01T10:34:53Z"
 		},
 		{
-			"checksumSHA1": "K0crHygPTP42i1nLKWphSlvOQJw=",
-			"path": "github.com/stretchr/objx",
-			"revision": "1a9d0bb9f541897e62256577b352fdbc1fb4fd94",
-			"revisionTime": "2015-09-28T12:21:52Z"
-		},
-		{
-			"checksumSHA1": "/kKwYqD04AkkDZFQhGwklKw3RFA=",
-			"path": "github.com/stretchr/testify",
-			"revision": "2402e8e7a02fc811447d11f881aa9746cdc57983",
-			"revisionTime": "2016-12-17T20:04:45Z"
-		},
-		{
 			"checksumSHA1": "JXUVA1jky8ZX8w09p2t5KLs97Nc=",
 			"path": "github.com/stretchr/testify/assert",
-			"revision": "2402e8e7a02fc811447d11f881aa9746cdc57983",
-			"revisionTime": "2016-12-17T20:04:45Z"
-		},
-		{
-			"checksumSHA1": "fg3TzS9/QK3wZbzei3Z6O8XPLHg=",
-			"path": "github.com/stretchr/testify/http",
-			"revision": "2402e8e7a02fc811447d11f881aa9746cdc57983",
-			"revisionTime": "2016-12-17T20:04:45Z"
-		},
-		{
-			"checksumSHA1": "WGwMB6WljaeGKzuNCX5M4E8LADE=",
-			"path": "github.com/stretchr/testify/mock",
 			"revision": "2402e8e7a02fc811447d11f881aa9746cdc57983",
 			"revisionTime": "2016-12-17T20:04:45Z"
 		},
