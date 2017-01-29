@@ -27,7 +27,7 @@ func VerifyPassword(user, pass string, conf config.Configuration) error {
 				}
 				return errors.New("Password Invalid")
 			default:
-				return errors.New("Invalid AT")
+				return errors.New("Invalid AT, Abort Request")
 			}
 		}
 	}

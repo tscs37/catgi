@@ -3,6 +3,8 @@ package logger
 import (
 	"context"
 
+	"io"
+
 	"git.timschuster.info/rls.moe/catgi/snowflakes"
 	"github.com/Sirupsen/logrus"
 )
@@ -67,5 +69,15 @@ func SetLoggingLevel(level string, ctx context.Context) context.Context {
 		panic(err)
 	}
 	log.Level = lvl
+	return context.WithValue(ctx, "logger", log)
+}
+
+// SetLogOutput sets the logging output writer.
+func SetLogOutput(w io.Writer, ctx context.Context) context.Context {
+	log, ok := ctx.Value("logger").(*logrus.Logger)
+	if !ok {
+		return ctx
+	}
+	log.Out = w
 	return context.WithValue(ctx, "logger", log)
 }

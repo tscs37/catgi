@@ -48,6 +48,58 @@ type Backend interface {
 	RunGC(ctx context.Context) ([]File, error)
 }
 
+// Temporary Onion Interface
+type OnionBackend interface {
+	// GetFirstWith returns the first backend in the hierarchy
+	// that provides a specific option and if none of the underlying
+	// Backends provide that option, returns nil.
+	//
+	// The resulting Backend must first be converted into the target
+	// interface before using the functions, be sure to check
+	// if that is OK.
+	//
+	// This function is used because Go's type system handles nested
+	// interface propagation with the agility and grace of a blue whale
+	// being dropped out of a Boeing 747 at nominal flight altitude.
+	GetFirstWith(options BackendOption) Backend
+
+	// GetAllWith returns a list of all backends configured that
+	// provide all given options.
+	//
+	// Some backends may filter this call if they cannot reasonably
+	// provide underlying functionality.
+	//
+	// This works like GetFirstWith but does not stop once
+	// a backend with the given options is found.
+	GetAllWith(options BackendOption) []Backend
+
+	// GetOptions returns all options of a backend as a OR'd value
+	GetOptions() BackendOption
+}
+
+func BackendHasOptions(b Backend, opts BackendOption) bool {
+	if ob, ok := b.(OnionBackend); ok {
+		if ob.GetOptions()&opts == opts {
+			return true
+		}
+	}
+	return false
+}
+
+type BackendOption uint
+
+const (
+	// The Backend is able to provide a statistics snapshot
+	BackendOptionStatistics BackendOption = 1 << iota
+	// BackendOptionDirectBytesIO indicates the backends supports
+	// storing byte slices directly via Write, Read and Delete Methods
+	BackendOptionDirectBytesIO
+	// BackendOptionDirectReaderIO indicates the backend supports
+	// storing reader data directly via Write, Read and Delete Methods
+	BackendOptionDirectReaderIO
+	BackendOptionPingFile
+)
+
 // File contains the data of a file, if it's public and when it was created.
 type File struct {
 	// CreatedAt is the creation time of the file

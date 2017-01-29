@@ -14,6 +14,8 @@ import (
 	_ "git.timschuster.info/rls.moe/catgi/backend/b2"
 	_ "git.timschuster.info/rls.moe/catgi/backend/buntdb"
 	_ "git.timschuster.info/rls.moe/catgi/backend/fcache"
+	_ "git.timschuster.info/rls.moe/catgi/backend/localfs"
+	_ "git.timschuster.info/rls.moe/catgi/backend/s3"
 	"git.timschuster.info/rls.moe/catgi/config"
 	"git.timschuster.info/rls.moe/catgi/logger"
 	"git.timschuster.info/rls.moe/catgi/utils"

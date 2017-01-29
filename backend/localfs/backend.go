@@ -32,6 +32,9 @@ type LocalFSBackend struct {
 	// FileMode Sets the mode used for all files
 	FileMode os.FileMode `mapstructure:"file_mode"`
 	// rwlock is used to protect write access
+	// This lowers the performance of the backend significantly
+	// as it means that only one write may be performed
+	// at a time. BuntDB can do multiple writes at a time.
 	rwlock sync.RWMutex
 }
 

@@ -1,4 +1,4 @@
-package backend
+package b2
 
 import (
 	"context"
@@ -28,11 +28,6 @@ func (b *B2Backend) Upload(flake string, file *common.File, ctx context.Context)
 	log.Debug("Writing File Data")
 	dataName := common.DataName(flake, skipSize)
 	metaName := common.MetaName(flake, skipSize, metaFormat)
-	log.Debug("Writing to ", dataName)
-	if err := b.writeFile(dataName, file.Data, ctx); err != nil {
-		log.Error("Error writing data ", err)
-		return err
-	}
 	log.Debug("Marshalling for ", metaName)
 	oldData := file.Data
 	file.Data = []byte{}
@@ -46,6 +41,12 @@ func (b *B2Backend) Upload(flake string, file *common.File, ctx context.Context)
 		return err
 	}
 	file.Data = oldData
+
+	log.Debug("Writing to ", dataName)
+	if err := b.writeFile(dataName, file.Data, ctx); err != nil {
+		log.Error("Error writing data ", err)
+		return err
+	}
 	return nil
 }
 
@@ -56,25 +57,19 @@ func (b *B2Backend) Exists(flake string, ctx context.Context) error {
 	dataName := common.DataName(flake, skipSize)
 	metaName := common.MetaName(flake, skipSize, metaFormat)
 	exists, _, err := b.pingFile(dataName, ctx)
-	if err != nil {
+	if !exists || err != nil {
 		return common.NewErrorFileNotExists(flake, err)
-	}
-	if !exists {
-		return common.NewErrorFileNotExists(flake, nil)
 	}
 	exists, _, err = b.pingFile(metaName, ctx)
-	if err != nil {
+	if !exists || err != nil {
 		return common.NewErrorFileNotExists(flake, err)
-	}
-	if !exists {
-		return common.NewErrorFileNotExists(flake, nil)
 	}
 	return nil
 }
 
 // Get reads the B2 File from the backend
 func (b *B2Backend) Get(flake string, ctx context.Context) (*common.File, error) {
-	log := logger.LogFromCtx(packageName+".Exists", ctx).WithField("object", flake)
+	log := logger.LogFromCtx(packageName+".Get", ctx).WithField("object", flake)
 	var file = &common.File{}
 	dataName := common.DataName(flake, skipSize)
 	metaName := common.MetaName(flake, skipSize, metaFormat)
@@ -130,6 +125,7 @@ func (b *B2Backend) Delete(flake string, ctx context.Context) error {
 
 	err = b.deleteFile(metaName, ctx)
 	if err != nil {
+		// Metafiles without data are better than Datafiles without Meta
 		return err
 	}
 

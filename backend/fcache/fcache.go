@@ -136,13 +136,19 @@ func (n *FCache) Get(flake string, ctx context.Context) (*common.File, error) {
 }
 
 func (n *FCache) Delete(flake string, ctx context.Context) error {
-	defer func(flake string, ctx context.Context) {
-		i, err := n.cache.Get(flake)
-		if err != nil {
-			return
-		}
+	log := logger.LogFromCtx(packageName+".Delete", ctx)
+	// We delete the item from cache first to prevent
+	// leaking a deleted file from the cache for the brief
+	// period where the file is still in cache but not in
+	// the backend.
+	// Originally this was done inside a defer.
+	i, err := n.cache.Get(flake)
+	if err == nil {
 		n.cache.Remove(i)
-	}(flake, ctx)
+	} else {
+		log.Warn("Deleting non-cached file, ignoring error on cache.")
+	}
+
 	return n.underlyingBackend.Delete(flake, ctx)
 }
 
