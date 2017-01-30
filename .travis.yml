@@ -7,11 +7,13 @@ env:
 go_import_path: git.timschuster.info/rls.moe/catgi
 install:
 - go get github.com/kardianos/govendor
+- go get github.com/GeertJohan/go.rice
+- go get github.com/GeertJohan/go.rice/rice
 - "$GOPATH/bin/govendor sync -v"
 script:
 - govendor test -v +local
-- cd cmd/catgi && go build; cd ../..
-- cd cmd/makepass && go build; cd ../..
+- cd cmd/catgi && rice embed-go && go build; cd ../..
+- cd cmd/makepass && rice embed-go && go build; cd ../..
 cache:
   directories:
   - $GOPATH/.cache
