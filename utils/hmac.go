@@ -54,7 +54,18 @@ func VerifyHMAC(hmac, key []byte, data io.Reader) (err error) {
 		result |= hmac[k] ^ verifyHMAC[k]
 	}
 	// if any differences are found, return error
-	if result != 0 || lenhmac != lenvmac || err != nil {
+	var hmacFailed bool
+	if result != 0 {
+		hmacFailed = true
+	}
+	if lenhmac != lenvmac {
+		hmacFailed = true
+	}
+	if err != nil {
+		hmacFailed = true
+	}
+
+	if hmacFailed {
 		return errors.New("HMAC failed")
 	}
 
