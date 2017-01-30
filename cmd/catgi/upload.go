@@ -60,7 +60,7 @@ func (h *handlerServePost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 	file.Data = fileData
-	log.Infof("Read %d bytes of a file", len(file.Data))
+	log.Debugf("Read %d bytes of a file", len(file.Data))
 	dAt, err := common.FromString(r.Form.Get("delete_at"))
 	if err != nil {
 		log.Warn("Could not read delete time: ", err)
