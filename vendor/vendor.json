@@ -15,6 +15,18 @@
 			"revision": ""
 		},
 		{
+			"checksumSHA1": "6xRcrOO03m/jXeopXDvcqL3/Zz0=",
+			"path": "github.com/GeertJohan/go.rice",
+			"revision": "4bbccbfa39e784796e483270451217d3369ecfbe",
+			"revisionTime": "2017-01-23T13:54:25Z"
+		},
+		{
+			"checksumSHA1": "xECV8VmnSwtMPugLqB1OAXwOs48=",
+			"path": "github.com/GeertJohan/go.rice/embedded",
+			"revision": "4bbccbfa39e784796e483270451217d3369ecfbe",
+			"revisionTime": "2017-01-23T13:54:25Z"
+		},
+		{
 			"checksumSHA1": "2avCvSn0XonfApKKuTMyiQmk7s0=",
 			"path": "github.com/Sirupsen/logrus",
 			"revision": "3ec0642a7fb6488f65b06f9040adc67e3990296a",
@@ -187,6 +199,12 @@
 			"revisionTime": "2016-12-04T14:16:30Z"
 		},
 		{
+			"checksumSHA1": "8i+beEgcVf0q/I7lTqo2ERZM/OU=",
+			"path": "github.com/daaku/go.zipexe",
+			"revision": "a5fe2436ffcb3236e175e5149162b41cd28bd27d",
+			"revisionTime": "2015-03-29T02:31:25Z"
+		},
+		{
 			"checksumSHA1": "dvabztWVQX8f6oMLRyv4dLH+TGY=",
 			"path": "github.com/davecgh/go-spew/spew",
 			"revision": "346938d642f2ec3594ed81d874461961cd0faa76",
@@ -245,6 +263,12 @@
 			"path": "github.com/jmespath/go-jmespath",
 			"revision": "bd40a432e4c76585ef6b72d3fd96fb9b6dc7b68d",
 			"revisionTime": "2016-08-03T19:07:31Z"
+		},
+		{
+			"checksumSHA1": "g+afVQQVopBLiLB5pFZp/8s6aBs=",
+			"path": "github.com/kardianos/osext",
+			"revision": "c2c54e542fb797ad986b31721e1baedf214ca413",
+			"revisionTime": "2016-08-11T00:15:26Z"
 		},
 		{
 			"checksumSHA1": "wJP11H3Pl/9TvzbOVh0kB7/FmVc=",
@@ -335,6 +359,12 @@
 			"path": "golang.org/x/crypto/bcrypt",
 			"revision": "01be46f62051d02cb6a36c9b47b37b24e5758c81",
 			"revisionTime": "2016-12-15T13:43:59Z"
+		},
+		{
+			"checksumSHA1": "FZQEdq4axGzxfrzfMy2DeYtE8ok=",
+			"path": "golang.org/x/crypto/blake2b",
+			"revision": "854ae91cdcbf914b499b1d7641d07859f3653481",
+			"revisionTime": "2017-01-26T19:47:58Z"
 		},
 		{
 			"checksumSHA1": "JsJdKXhz87gWenMwBeejTOeNE7k=",

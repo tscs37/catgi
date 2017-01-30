@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
+
+	rice "github.com/GeertJohan/go.rice"
 
 	"git.timschuster.info/rls.moe/catgi/logger"
 )
@@ -15,7 +16,7 @@ func newHandlerServeSite() http.Handler {
 }
 func (h *handlerServeSite) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	log := logger.LogFromCtx("serverIndex", r.Context())
-	dat, err := ioutil.ReadFile("./index.html")
+	dat, err := rice.MustFindBox("./resources").Bytes("index.html")
 	if err != nil {
 		log.Error("Could not load file from disk: ", err)
 		rw.WriteHeader(404)
