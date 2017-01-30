@@ -2,11 +2,7 @@ package common
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"time"
-
-	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
 // Backend allows the server to retrieve single files based on snowflake
