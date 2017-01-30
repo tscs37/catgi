@@ -31,22 +31,32 @@ func HMAC(key []byte, data io.Reader) ([]byte, error) {
 // data stream plus key. It will generate the HMAC
 // for that datastream and then perform a constant-time
 // comparison of the two HMACs.
-func VerifyHMAC(hmac, key []byte, data io.Reader) error {
-	verifyHMAC, err := HMAC(key, data)
-	if err != nil {
-		return err
-	}
-	if len(hmac) != len(verifyHMAC) {
-		return errors.New("HMAC differing in length")
-	}
-	var diffs = 0
-	for k := range hmac {
-		if hmac[k] != verifyHMAC[k] {
-			diffs++
+func VerifyHMAC(hmac, key []byte, data io.Reader) (err error) {
+	var verifyHMAC = make([]byte, len(hmac))
+	verifyHMAC, err = HMAC(key, data)
+
+	lenhmac := len(hmac)
+	lenvmac := len(verifyHMAC)
+	if lenhmac != lenvmac {
+		// if macs are differing in length, verify macs
+		// against itself to avoid timing attacks.
+		if lenvmac > lenhmac {
+			verifyHMAC = verifyHMAC[:lenhmac]
+		} else {
+			verifyHMAC = append(verifyHMAC,
+				make([]byte, lenhmac-lenvmac)...)
 		}
 	}
-	if diffs > 0 {
+
+	// do a constant-time compare
+	var result byte
+	for k := range hmac {
+		result |= hmac[k] ^ verifyHMAC[k]
+	}
+	// if any differences are found, return error
+	if result != 0 || lenhmac != lenvmac || err != nil {
 		return errors.New("HMAC failed")
 	}
+
 	return nil
 }
