@@ -109,6 +109,5 @@ const MinTTL = time.Hour * 1
 const MaxDataSize = 25 * 1024 * 1024
 
 // SkipSize marks how many characters should be grouped when
-// splitting filenames. If filenames aren't split, this can be
-// ignored.
+// splitting filenames.
 const SkipSize = 2
