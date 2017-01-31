@@ -9,6 +9,8 @@ import (
 
 // HMAC will read the given reader and return the MAC for the
 // given key
+// As lng as the Blake2b Algorithm can be initialized, this
+// function returns a hash.
 func HMAC(key []byte, data io.Reader) ([]byte, error) {
 	// We must hash long keys but short keys are padded
 	// by blake2b.
@@ -22,29 +24,40 @@ func HMAC(key []byte, data io.Reader) ([]byte, error) {
 	}
 	_, err = io.Copy(hasher, data)
 	if err != nil {
-		return nil, err
+		return hasher.Sum(nil), err
 	}
 	return hasher.Sum(nil), nil
 }
+
+// HMACVerificationFail is returned by VerifyHMAC when the hmac
+// given did not match the given datastream.
+var HMACVerificationFail = errors.New("HMAC Verification failed")
 
 // VerifyHMAC will take an HMAC and a to-be-verified
 // data stream plus key. It will generate the HMAC
 // for that datastream and then perform a constant-time
 // comparison of the two HMACs.
 func VerifyHMAC(hmac, key []byte, data io.Reader) (err error) {
+	// Note on functionality
+	// This function is never allowed to return early, rather
+	// it must perform the mac comparison even if a mac could
+	// not be computed.
+
 	var verifyHMAC = make([]byte, len(hmac))
 	verifyHMAC, err = HMAC(key, data)
 
 	lenhmac := len(hmac)
 	lenvmac := len(verifyHMAC)
 	if lenhmac != lenvmac {
-		// if macs are differing in length, verify macs
-		// against itself to avoid timing attacks.
-		if lenvmac > lenhmac {
-			verifyHMAC = verifyHMAC[:lenhmac]
+		// if the length of the macs mismatch we pad or trim
+		// the incoming mac accordingly and continue with the
+		// compare. this prevents leaking information to the
+		// outside.
+		if lenhmac > lenvmac {
+			hmac = hmac[:lenvmac]
 		} else {
-			verifyHMAC = append(verifyHMAC,
-				make([]byte, lenhmac-lenvmac)...)
+			hmac = append(hmac,
+				make([]byte, lenvmac-lenhmac)...)
 		}
 	}
 
@@ -54,20 +67,16 @@ func VerifyHMAC(hmac, key []byte, data io.Reader) (err error) {
 		result |= hmac[k] ^ verifyHMAC[k]
 	}
 	// if any differences are found, return error
-	var hmacFailed bool
+	var retErr error
 	if result != 0 {
-		hmacFailed = true
+		retErr = HMACVerificationFail
 	}
 	if lenhmac != lenvmac {
-		hmacFailed = true
+		retErr = HMACVerificationFail
 	}
 	if err != nil {
-		hmacFailed = true
+		retErr = HMACVerificationFail
 	}
 
-	if hmacFailed {
-		return errors.New("HMAC failed")
-	}
-
-	return nil
+	return retErr
 }
