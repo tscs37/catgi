@@ -224,3 +224,31 @@ for today's standards.
 
 ```
 ```
+
+## One Secret to Rule Them All 
+
+As of writing this document, Catgi requires using several secrets
+for each component that uses secret keys or data.
+
+To make this easier for the user and me alike, I devised the keyman.go
+file.
+
+It defines a type, SecretKey, that can be used to generate arbitrary
+subsecrets and pull an arbitrary amount of secret data using HKDF from
+each.
+
+The path notation of the secret key for documentation seperates the
+strings with a `/` and surrounds it with `"` if it contains `/` or
+whitespace. 
+
+Examples:
+
+```
+master/internal/cookie_secret
+master/backends/encrypt/"first slot"
+master/backends/fcache/localfs/encrypt
+```
+
+Each backend or use can therefore use their own key for their own
+purposes and derive subkeys if necessary that they can pass down
+to other uses without compromising their secret.
