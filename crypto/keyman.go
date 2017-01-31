@@ -1,8 +1,10 @@
 package crypto
 
 import (
-	"errors"
+	"bytes"
 	"hash"
+
+	"fmt"
 
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/crypto/hkdf"
@@ -38,13 +40,13 @@ func (s SecretKey) DeriveKey(path ...string) (SecretKey, error) {
 	}
 
 	var newSecret SecretKey
-	keyGenerator, err := blake2b.New512(s[:])
+
+	newSecretData, err := HMAC(s[:], bytes.NewBufferString(path[0]))
 	if err != nil {
-		return [64]byte{}, err
+		return newSecret, err
 	}
 
-	keyGenerator.Write([]byte(path[0]))
-	copy(newSecret[:], keyGenerator.Sum([]byte{}))
+	copy(newSecret[:], newSecretData)
 
 	if len(path) > 1 {
 		return newSecret.DeriveKey(path[1:]...)
@@ -76,16 +78,19 @@ func (s SecretKey) GetNSecretBytes(n int, salt []byte) ([]byte, error) {
 	returnData := make([]byte, n)
 
 	read, err := reader.Read(returnData)
+	if err != nil {
+		return returnData, err
+	}
 	if read < n {
-		return returnData, errors.New("Insufficient Read")
+		return returnData, fmt.Errorf("Wanted %d but got %d bytes", n, read)
 	}
 	return returnData, err
 }
 
 func (s SecretKey) MustGetNSecretBytes(n int, salt []byte) []byte {
-    secBytes, err := s.GetNSecretBytes(n, salt)
-    if err != nil {
-        panic(err)
-    }
-    return secBytes
+	secBytes, err := s.GetNSecretBytes(n, salt)
+	if err != nil {
+		panic(err)
+	}
+	return secBytes
 }

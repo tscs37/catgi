@@ -252,3 +252,84 @@ master/backends/fcache/localfs/encrypt
 Each backend or use can therefore use their own key for their own
 purposes and derive subkeys if necessary that they can pass down
 to other uses without compromising their secret.
+
+## Symmetric Block Encryption
+
+This is a collection of notes on how I'm implementing the Symmetric
+Encryption.
+
+The first problem is that I don't want to encrypt inplace, I'd rather
+move towards using streams to reduce the memory usage of Catgi.
+
+As a threat model I've chosen to go a bit simple; an attacker who has full
+man-in-the-middle control over the data stream should only be able to make
+decryption fail with an error.
+
+My implementation of Encryption is planned to produce blocks looking like
+this:
+
+```
+type BlockLength uint64 // [4]byte
+type EncryptedBlock struct {
+    Cipher  uint16   `msgpack:"cipher"`
+    Padding uint16   `msgpack:"padding"`
+    Nonce   [12]byte `msgpack:"nonce"`
+    Salt    []byte   `msgpack:"salt"`
+    Data    []byte   `msgpack:"data"`
+}
+```
+
+Cipher is a constant that indicates which encryption was used.
+
+Nonce is the nonce used by the encryption.
+
+Salt is a key salt added when starting a new encryption. This prevents
+key reuse, as each encryption uses a different key, which also reduces
+the probability of nonce reuse. (2^(8*24) is a lot but this is safer)
+
+Data is the ciphertext.
+
+BlockLength is a header byte that encodes the size of the following block.
+This way the decryption has it easier to decode the blocks.
+
+For Streaming, the Block size may vary so I'll have to use several methods
+of encrypting:
+
+* Whole, which encrypts everything at once
+* Stream, which encrypts as long it can
+* Block, which works like stream but always produces fixed size blocks
+
+This mode is not encoded in the ciphertext and must be determined by the
+application.
+
+The Go API does not expose a proper streaming AEAD interface, so all 
+ciphers use the same block-based encryption underneath.
+
+All blocks operate independently, you can decode any part of a stream
+provided you have the key the same as block ciphering.
+
+The block cipher will only pad the data it encrypts, it makes no guarantees
+that the encoded blocks are all of the same size (ie best effort mode).
+
+### Size Limits
+
+In Block Mode the amount of padding cannot exceed 64KiB.
+
+Since blocks are 4KiB, this should not be a problem.
+
+Additionally, Block Mode is limited to 2^63-1 total block size.
+
+In Stream Mode, the padding is not used and the block size is up to 2^64-1.
+
+In Whole mode, you may encrypt up to 2^64-1 bytes of data, not accounting for encoding
+overhead.
+
+### notes
+
+An attacker could corrupt the ciphertext by changing the BlockSizeHeader,
+which would cause the application to read the wrong amount of data
+from the wire.
+
+However, this attack vector leads only to the application not decrypting
+the data, which an attacker could do by flipping any byte in the block,
+so I don't see it as a problem tbh.
