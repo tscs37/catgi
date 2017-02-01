@@ -139,36 +139,36 @@ func (l *LocalFSBackend) Delete(name string, ctx context.Context) error {
 	return os.Remove(l.getPath(name))
 }
 
-func (l *LocalFSBackend) ListGlob(ctx context.Context, glob string) ([]*common.File, error) {
-	name := common.EscapeName(glob)
-
-	filePath := l.getPath(name)
-
+func (l *LocalFSBackend) ListGlob(ctx context.Context, prefix string) ([]*common.File, error) {
+	log := logger.LogFromCtx(packageName+".ListGlob", ctx)
 	l.rwlock.RLock()
 	defer l.rwlock.RUnlock()
 
-	matches, err := filepath.Glob(filePath)
-	if err != nil {
-		return nil, err
-	}
-
 	var retList = []*common.File{}
 
-	for _, v := range matches {
-		dat, err := ioutil.ReadFile(v)
-		if err != nil {
-			return retList, err
-		}
-		var file = &common.File{}
-		err = msgpack.Unmarshal(dat, file)
-		if err != nil {
-			return retList, err
-		}
-		file.Data = []byte{}
-		retList = append(retList, file)
-	}
+	err := filepath.Walk(l.getRoot(),
+		func(path string, info os.FileInfo, err error) error {
+			internalPath := strings.TrimPrefix(path, l.getRoot())
+			log.Debug("Descending on '", path, "'")
+			if strings.HasPrefix(internalPath, prefix) && !info.IsDir() {
+				dat, err := ioutil.ReadFile(path)
+				if err != nil {
+					log.Error("Error on Read: ", err, " -> ", internalPath)
+					return nil
+				}
+				var file = &common.File{}
+				err = msgpack.Unmarshal(dat, file)
+				if err != nil {
+					log.Error("Error on Decode: ", err, " -> ", internalPath)
+					return nil
+				}
+				file.Data = []byte{}
+				retList = append(retList, file)
+			}
+			return nil
+		})
 
-	return retList, nil
+	return retList, err
 }
 
 func (l *LocalFSBackend) RunGC(ctx context.Context) ([]common.File, error) {
@@ -207,17 +207,21 @@ func (l *LocalFSBackend) pingFS() error {
 	return nil
 }
 
-func (l *LocalFSBackend) getPath(name string) string {
-	name = common.EscapeName(name)
-
-	fileName := common.FileName(name, "msgpack", 2)
-
+func (l *LocalFSBackend) getRoot() string {
 	if !l.AbsoluteRoot {
 		wd, err := os.Getwd()
 		if err != nil {
 			wd = "."
 		}
-		return filepath.Join(wd, l.Root, fileName)
+		return filepath.Join(wd, l.Root)
 	}
-	return filepath.Join("/", l.Root, fileName)
+	return filepath.Join("/", l.Root)
+}
+
+func (l *LocalFSBackend) getPath(name string) string {
+	name = common.EscapeName(name)
+
+	fileName := common.FileName(name, "msgpack", 2)
+
+	return filepath.Join(l.getRoot(), fileName)
 }
