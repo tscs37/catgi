@@ -3,6 +3,7 @@ package b2
 import (
 	"context"
 	"io"
+	"strings"
 	"time"
 
 	"encoding/json"
@@ -133,7 +134,7 @@ func (b *B2Backend) Delete(flake string, ctx context.Context) error {
 }
 
 // ListGlob returns a list of all files in the bucket
-func (b *B2Backend) ListGlob(ctx context.Context, glob string) ([]*common.File, error) {
+func (b *B2Backend) ListGlob(ctx context.Context, prefix string) ([]*common.File, error) {
 	log := logger.LogFromCtx(packageName+".ListGlob", ctx)
 	files := []*common.File{}
 	var cur *b2.Cursor
@@ -156,7 +157,9 @@ func (b *B2Backend) ListGlob(ctx context.Context, glob string) ([]*common.File, 
 				if err != nil {
 					log.Error("Meta Unmarshal Error: ", err)
 				} else {
-					files = append(files, curFile)
+					if strings.HasPrefix(obj.Name(), prefix) {
+						files = append(files, curFile)
+					}
 				}
 			}
 		}
