@@ -36,7 +36,7 @@ func GenericGC(b Backend,
 	var deletedFiles = []File{}
 
 	log.Debug("Obtaining file list from backend")
-	fPtrs, err := b.ListGlob(ctx, "*")
+	fPtrs, err := b.ListGlob(ctx, "")
 	if err != nil {
 		log.Error("Error on Obtaining List: ", err)
 		return nil, err

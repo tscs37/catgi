@@ -32,7 +32,7 @@ type Backend interface {
 	// ListGlob returns a list of all files with the given prefix
 	// The returned file structs need to contain the name but need not
 	// contain the file data
-	ListGlob(ctx context.Context, glob string) (files []*File, err error)
+	ListGlob(ctx context.Context, prefix string) (files []*File, err error)
 
 	// RunGC will clean up expired files from the storage backend.
 	// On automatically expiring backends, this returns an empty array
