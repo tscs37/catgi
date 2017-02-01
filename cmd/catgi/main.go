@@ -123,6 +123,14 @@ func main() {
 		),
 	).Methods("GET")
 
+	router.PathPrefix("/res/").Handler(http.StripPrefix("/res/",
+		newHandlerInjectLog(
+			newHandlerCheckToken(true,
+				newHandlerServeResources(),
+			),
+		),
+	)).Methods("GET")
+
 	router.Handle("/login",
 		newHandlerInjectLog(
 			piwik(
