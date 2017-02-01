@@ -8,6 +8,9 @@ import (
 
 	"git.timschuster.info/rls.moe/catgi/backend/common"
 	"git.timschuster.info/rls.moe/catgi/logger"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/s3"
 )
 
 const skipSize = 2
@@ -133,8 +136,33 @@ func (s *S3Backend) Delete(flake string, ctx context.Context) error {
 	return nil
 }
 
-func (s *S3Backend) ListGlob(ctx context.Context, glob string) ([]*common.File, error) {
-	return nil, common.ErrorNotImplemented
+func (s *S3Backend) ListGlob(ctx context.Context, prefix string) ([]*common.File, error) {
+	log := logger.LogFromCtx(packageName+".ListGlob", ctx)
+	reqInput := &s3.ListObjectsInput{
+		Bucket: aws.String(s.config.Bucket),
+		Prefix: aws.String(prefix),
+	}
+	response, err := s.s3.ListObjects(reqInput)
+	if err != nil {
+		return nil, err
+	}
+	var retList = []*common.File{}
+	for k := range response.Contents {
+		dat, err := s.ReadBytes(common.MetaName(
+			*response.Contents[0].Key, skipSize, metaFormat), ctx)
+		if err != nil {
+			log.Error("Error on Read for Key ", *response.Contents[k].Key, ":", err)
+			continue
+		}
+		var file = &common.File{}
+		err = msgpack.Unmarshal(dat, file)
+		if err != nil {
+			log.Error("Error on Unpack for Key ", *response.Contents[k].Key, ":", err)
+			continue
+		}
+		retList = append(retList, file)
+	}
+	return retList, nil
 }
 
 func (s *S3Backend) RunGC(ctx context.Context) ([]common.File, error) {
