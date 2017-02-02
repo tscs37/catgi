@@ -1,6 +1,7 @@
 # CatGi - Selfhosted Image and Code Dump
 
 [![Travis](https://img.shields.io/travis/tscs37/catgi.svg?style=flat-square)](https://travis-ci.org/tscs37/catgi)
+[![Build Status](https://ci.timschuster.info/api/badges/rls.moe/catgi/status.svg)](https://ci.timschuster.info/rls.moe/catgi)
 
 
 CatGi is a pluggable, extensible and selfhosted provider of images, text and more.
