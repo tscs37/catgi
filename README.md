@@ -113,6 +113,7 @@ Other backends might required differing configuration.
 | BuntDB       | `buntdb`    | Automatic GC and fast                |
 | FCache       | `fcache`    | Caching Backend, not standalone      |
 | LocalFS      | `localfs`   | Stores in Filesystem, no auto GC     |
+| AWS S3       | `s3`        | Like B2 but for AWS                  |
 
 ## License
 
