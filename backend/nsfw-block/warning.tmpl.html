@@ -1,0 +1,57 @@
+<!doctype html>
+<html class="uk-height-1-1">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NSFW Notice</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.0.0-beta.6/css/uikit.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.0.0-beta.6/js/uikit.min.js"></script>
+</head>
+
+<body class="uk-height-1-1 uk-background-muted">
+    <div class="uk-panel uk-width-1-1 uk-position-center">
+        <center class="uk-margin-top">
+            <h1 class="uk-text-muted">NSFW Notice</h1>
+        </center>
+        <div class="uk-panel uk-margin">
+            <div class="uk-panel uk-width-1-2 uk-align-center">
+                <center>
+                    <br /> You are trying to access content that has been marked
+                    <br /> <b>Not Safe For Work or Mature</b>
+                    <br /> This means the content is not suitable for
+                    <br /> a working environment or humans under 18
+                    <br /> (or whatever your jurisdiction says)
+                    <hr /> To continue you need to confirm that you are
+                    <br /> <i>atleast 18 years old or a robot</i>.
+                </center>
+            </div>
+            <div class=" uk-panel uk-width-1-3 uk-align-center ">
+                <br>
+                <form action="{{path}}" method="GET">
+                    <input type="hidden" name="ctx_token" value="{{token}}" />
+                    <label title="You are 18+ old and want to see potentially NSFW content" uk-tooltip>
+                        <center><input 
+                            class="uk-width-1-1 uk-button-danger uk-text-large uk-margin-top"  
+                            type="submit" 
+                            value="I am 18+ Years Old"/></center>
+                    </label>
+                </form>
+                <form action="{{path}}" method="GET">
+                    <input type="hidden" name="ctx_token" value="{{token}}" />
+                    <input type="hidden" name="ctx_add_token" value="is_a_robot" />
+                    <label title="You are a robot and want to see potentially NSFW content" uk-tooltip>
+                        <center><input 
+                            class="uk-width-1-1 uk-button-danger uk-text-large uk-margin-top" 
+                            type="submit"
+                            click-me-if-you-are-a-robot="yes"
+                            value="I am a Robot"
+                        /></center>
+                    </label>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
