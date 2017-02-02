@@ -1,3 +1,45 @@
+# v0.1.4:
+
+## New Features:
+* Generic GC that can be used by most backends without modification
+* Implemented a basic compliancy test suite to run against backends
+* Added Basis for expandable Backends in form of OnionBackend interface
+* Generic Configuration Parser, used only in S3 backend atm
+* A new LocalFS backend to store files in the filesystem (INNNOVATION!)
+* A new AWS S3 backend that is untested (STABILITY!)
+* Index.html and login.html are now embedded, when the folder `./resources` is present, that will be used instead of any embedded files. *Note* that this is a breaking change if you modified the index.html or login.html, however, it should be fairly quickly fixed
+* When the IgnoreAuth option is set in the config, then logins are optional but logins still work
+* Using http.ServeContent to properly serve files with mimedata and all, HTML files now werk!
+* Generic Resource handler to serve any file from `./resource`
+
+## Fixes & Notes:
+* Proper package names for B2 Backend
+* B2 Backend upload is now more robust
+* Moved B2 naming functions into common package, these should be used by all packages in the future
+* B2 ListGlob now actually works
+* Backends now correct flake errors and don't panic on nil-Files anymore
+* BuntDB's ListGlob should also work now
+* Compliancy test suite for FCache, LocalFS and BuntDB
+* Split up the common package over several Files
+* Added tests to the common package (fixed some bugs there too)
+* Simplified NewDriver in the backend package
+* FCache bugs fixed that lead to crash on delete
+* Password Validation is now in a dedicated package and allows for Dropbox like authentication
+* HTTP Routes now use localized config instead of a global variable
+* Logger can set output target from context
+* Backends can now put arbitrary cookies and headers into response
+* Additionally backends can also take over writing the HTTP response
+* Started implementing a crypto backend for future use
+* Simplified ID Fountain Code
+* Context will now contain the HTTP request
+* Password verification has been moved into a dedicated file
+* Updated vendor.json
+
+## Non-Code-Related:
+* Using Drone + Travis now, two CI's are better than one, right?
+* Improved Travis CI pipeline
+* Added Backend List to README
+* You'll find some development notes in /papers now, atm this concerns mainly cryptography stuff
 # v0.1.3:
 
 ## New Features:
