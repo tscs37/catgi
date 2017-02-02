@@ -1,12 +1,16 @@
 # CatGi - Selfhosted Image and Code Dump
 
 [![Travis](https://img.shields.io/travis/tscs37/catgi.svg?style=flat-square)](https://travis-ci.org/tscs37/catgi)
+[![Build Status](https://ci.timschuster.info/api/badges/rls.moe/catgi/status.svg)](https://ci.timschuster.info/rls.moe/catgi)
 
 
 CatGi is a pluggable, extensible and selfhosted provider of images, text and more.
 
 The App does not rely on any configuration and operates
 as an in-memory testable filestore until a config is specified.
+
+At the moment files can be stored for up to 1 month and no longer.
+Permanent storage is a goal for a future release.
 
 ## Usage
 
@@ -101,6 +105,16 @@ This configuration will setup CatGi as follows:
 
 Other backends might required differing configuration.
 
+### Available backends
+
+| Name         | Driver Name | Notes                                |
+|--------------|-------------|--------------------------------------|
+| B2Backblaze  | `b2`        | No automatic GC and rather slow      |
+| BuntDB       | `buntdb`    | Automatic GC and fast                |
+| FCache       | `fcache`    | Caching Backend, not standalone      |
+| LocalFS      | `localfs`   | Stores in Filesystem, no auto GC     |
+| AWS S3       | `s3`        | Like B2 but for AWS                  |
+
 ## License
 
 CatGi is licensed under MPL 2.0
@@ -110,8 +124,6 @@ Dependencies are under their respective license and copyright.
 ## Contribute
 
 Pull requests should be well formatted.
-
-New Backends are required to implement everything but `ListGlob`.
 
 HTML should be kept to minimal filesize, CSS or JS should be avoided.
 
@@ -130,8 +142,10 @@ things:
 
     * Public Gallery
     * Automatic Garbage Collection (Manual GC works now)
+    * Permanent Files
+    * Named Publishing (eg `catgi.rls.moe/n/helloworld.txt`)
 
-These are very low priority so I'm going to do them whenever I find time
-myself.
+I have a few other features planned to, like S3 and GCS support,
+federating across servers and much more.
 
 Pull Requests for additional features are welcome.

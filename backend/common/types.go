@@ -2,8 +2,6 @@ package common
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"time"
 )
 
@@ -34,7 +32,7 @@ type Backend interface {
 	// ListGlob returns a list of all files with the given prefix
 	// The returned file structs need to contain the name but need not
 	// contain the file data
-	ListGlob(ctx context.Context, glob string) (files []*File, err error)
+	ListGlob(ctx context.Context, prefix string) (files []*File, err error)
 
 	// RunGC will clean up expired files from the storage backend.
 	// On automatically expiring backends, this returns an empty array
@@ -46,25 +44,57 @@ type Backend interface {
 	RunGC(ctx context.Context) ([]File, error)
 }
 
-// File contains the data of a file, if it's public and when it was created.
-type File struct {
-	// CreatedAt is the creation time of the file
-	CreatedAt *DateOnlyTime `json:"created_at"`
-	// Public marks if the file is public or not
-	Public bool `json:"public,omitempty"`
-	// Data is the raw binary data of the file
-	Data []byte `json:"data,omitempty"`
-	// DeleteAt  is the expiry date of a file
-	DeleteAt *DateOnlyTime `json:"delete_at"`
-	// Flake is a unique identifier for the file
-	Flake string `json:"name"`
-	// Content Type sets the Mime Header
-	ContentType string `json:"mime"`
-	// If this is not empty, use this extension for downloads.
-	FileExtension string `json:"ext,omitempty"`
-	// Username of who uploaded the file
-	User string `json:"usr,omitempty"`
+// Temporary Onion Interface
+type OnionBackend interface {
+	// GetFirstWith returns the first backend in the hierarchy
+	// that provides a specific option and if none of the underlying
+	// Backends provide that option, returns nil.
+	//
+	// The resulting Backend must first be converted into the target
+	// interface before using the functions, be sure to check
+	// if that is OK.
+	//
+	// This function is used because Go's type system handles nested
+	// interface propagation with the agility and grace of a blue whale
+	// being dropped out of a Boeing 747 at nominal flight altitude.
+	GetFirstWith(options BackendOption) Backend
+
+	// GetAllWith returns a list of all backends configured that
+	// provide all given options.
+	//
+	// Some backends may filter this call if they cannot reasonably
+	// provide underlying functionality.
+	//
+	// This works like GetFirstWith but does not stop once
+	// a backend with the given options is found.
+	GetAllWith(options BackendOption) []Backend
+
+	// GetOptions returns all options of a backend as a OR'd value
+	GetOptions() BackendOption
 }
+
+func BackendHasOptions(b Backend, opts BackendOption) bool {
+	if ob, ok := b.(OnionBackend); ok {
+		if ob.GetOptions()&opts == opts {
+			return true
+		}
+	}
+	return false
+}
+
+type BackendOption uint
+
+const (
+	// The Backend is able to provide a statistics snapshot
+	BackendOptionStatistics BackendOption = 1 << iota
+	// BackendOptionDirectBytesIO indicates the backends supports
+	// storing byte slices directly via Write, Read and Delete Methods
+	BackendOptionDirectBytesIO
+	// BackendOptionDirectReaderIO indicates the backend supports
+	// storing reader data directly via Write, Read and Delete Methods
+	BackendOptionDirectReaderIO
+	BackendOptionPingFile
+)
 
 // DefaultTTL is the default Time-to-Live of new Objects
 const DefaultTTL = time.Hour * 24 * 7
@@ -79,98 +109,5 @@ const MinTTL = time.Hour * 1
 const MaxDataSize = 25 * 1024 * 1024
 
 // SkipSize marks how many characters should be grouped when
-// splitting filenames. If filenames aren't split, this can be
-// ignored.
+// splitting filenames.
 const SkipSize = 2
-
-// ErrorFileNotExist is returned when a requested file does not
-// exist. Non-fatal when returned from backend.Exists().
-type ErrorFileNotExist struct {
-	Object     string
-	InnerError error
-}
-
-// Error returns a nested Error Message regarding a missing file
-func (e ErrorFileNotExist) Error() string {
-	return "ErrFileNotExist(" + e.Object + "): " + e.InnerError.Error()
-}
-
-// NewErrorFileNotExists returns a ErrFileNotExist typed error.
-func NewErrorFileNotExists(name string, err error) error {
-	if err == nil {
-		err = errors.New("generic file not exist")
-	}
-	return ErrorFileNotExist{
-		Object:     name,
-		InnerError: err,
-	}
-}
-
-var (
-	// ErrorNotImplemented is returned if the underlying interface has
-	// not implemented a function. The presence of ErrorNotImplemented is
-	// not acceptable for any production-ready backend.
-	ErrorNotImplemented = errors.New("Request without Implementation")
-	// ErrorExpired is returned when the file that was requested has been
-	// found but was deleted because it expired
-	ErrorExpired = errors.New("The requested file has expired")
-	// ErrorQuotaExceeded is returned when the request issued exceeded a
-	// quota in the backend, for example if a file is too large or a publish
-	// contains too many flakes.
-	ErrorQuotaExceeded = errors.New("Backend aborted because a quota was exceeded")
-	// ErrorIncompleteWrite is returned when the underlying data was not
-	// written to the backend entirely and may be in an inconsistent state.
-	ErrorIncompleteWrite = errors.New("Backend could not complete write")
-	// ErrorIndexNoSerialize is returned by index.Serialize() or index.Unserialize() when they
-	// are not to be stored in the backend
-	ErrorIndexNoSerialize = errors.New("Do not serialize this index")
-)
-
-type DateOnlyTime struct {
-	time.Time
-}
-
-func (dot *DateOnlyTime) UnmarshalJSON(b []byte) (err error) {
-	s := string(b)
-	if len(s) == 2 {
-		return errors.New("Cannot parse empty date")
-	}
-	s = s[1 : len(s)-1]
-
-	t, err := time.Parse("2006-01-02", s)
-	if err != nil {
-		return err
-	}
-	dot.Time = t
-	return nil
-}
-
-func (dot *DateOnlyTime) MarshalJSON() ([]byte, error) {
-	s := dot.Format("2006-01-02")
-	s = fmt.Sprintf("\"%s\"", s)
-	return []byte(s), nil
-}
-
-func (dot *DateOnlyTime) TTL() time.Duration {
-	dead := dot.Unix()
-	now := time.Now().UTC().Unix()
-	// flake already dead, TTL is 0
-	if now >= dead {
-		return 0 * time.Second
-	}
-	return time.Duration(dead-now) * time.Second
-}
-
-func FromTime(t time.Time) *DateOnlyTime {
-	return &DateOnlyTime{
-		Time: t,
-	}
-}
-
-func FromString(s string) (*DateOnlyTime, error) {
-	t, err := time.Parse("2006-01-02", s)
-	if err != nil {
-		return nil, err
-	}
-	return FromTime(t), nil
-}

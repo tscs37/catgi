@@ -6,15 +6,22 @@ import (
 	"net/http"
 	"time"
 
-	"bitbucket.org/taruti/mimemagic"
+	"bytes"
+
+	"git.timschuster.info/rls.moe/catgi/backend/common"
 	"git.timschuster.info/rls.moe/catgi/logger"
+	"git.timschuster.info/rls.moe/catgi/utils"
 	"github.com/gorilla/mux"
 )
 
-type handlerServeGet struct{}
+type handlerServeGet struct {
+	backend common.Backend
+}
 
-func newHandlerServeGet() http.Handler {
-	return &handlerServeGet{}
+func newHandlerServeGet(b common.Backend) http.Handler {
+	return &handlerServeGet{
+		backend: b,
+	}
 }
 
 func (h *handlerServeGet) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
@@ -30,37 +37,28 @@ func (h *handlerServeGet) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	r = r.WithContext(utils.PutHTTPIntoContext(r, r.Context()))
+
+	// <- BEGIN BACKEND INTERACTION ->
 	log.Debug("Loading File from Backend")
-	f, err := curBe.Get(flake, r.Context())
-	if err != nil {
+	f, err := h.backend.Get(flake, r.Context())
+	// -> END BACKEND INTERACTIOn <-
+
+	if err != nil && !common.IsHTTPOption(err) {
 		log.Warn("File error on backend: ", err)
 		rw.WriteHeader(404)
 		fmt.Fprint(rw, "Could not find file")
 		return
+	} else if common.IsHTTPOption(err) {
+		httpopt := err.(common.ErrorHTTPOptions)
+		httpopt.PassOverHTTP(rw)
+		if httpopt.WantsTakeover() {
+			httpopt.HTTPTakeover(r, rw, r.Context())
+			return
+		}
 	}
 
 	log.Debug("Writing out response")
-
-	mimetype := ""
-
-	if f.ContentType == "" {
-		if len(f.Data) > 1024 {
-			mimetype = mimemagic.Match("image/png", f.Data[:1024])
-		} else {
-			mimetype = mimemagic.Match("image/png", f.Data)
-		}
-	} else {
-		mimetype = f.ContentType
-	}
-
-	var filename = flake + f.FileExtension
-	{
-		if name, ok := vars["name"]; ok {
-			if ext, ok := vars["ext"]; ok {
-				filename = name + "." + ext
-			}
-		}
-	}
 
 	if r.URL.Query().Get("raw") == "1" {
 		rw.Header().Add("Content-Type", "application/json")
@@ -71,13 +69,12 @@ func (h *handlerServeGet) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		}
 		_, err = rw.Write(dat)
 	} else {
-		rw.Header().Add("Content-Disposition", "inline; filename="+filename)
-		rw.Header().Add("Content-Type", mimetype)
+		buf := bytes.NewReader(f.Data)
 		remainingAge := fmt.Sprintf("%.0f", f.DeleteAt.Sub(time.Now().UTC()).Seconds())
 		rw.Header().Add("Cache-Control", "public, max-age="+remainingAge)
 		rw.Header().Add("X-Catgi-Expires-At", f.DeleteAt.Format("2006-01-02"))
 		rw.Header().Add("X-Catgi-Owner", f.User)
-		_, err = rw.Write(f.Data)
+		http.ServeContent(rw, r, f.Flake+"."+f.FileExtension, f.CreatedAt.Time, buf)
 	}
 	if err != nil {
 		log.Errorf("Error on write: %s", err)

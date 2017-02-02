@@ -74,6 +74,13 @@ func NewFCacheBackend(params map[string]interface{}, ctx context.Context) (commo
 func (n *FCache) Name() string { return driverName }
 
 func (n *FCache) Upload(flake string, file *common.File, ctx context.Context) error {
+	if file == nil {
+		return common.ErrorSerializationFailure
+	}
+
+	if file.Flake != flake {
+		file.Flake = flake
+	}
 	if !n.asyncUpload {
 		err := n.underlyingBackend.Upload(flake, file, ctx)
 		if err != nil {
@@ -111,7 +118,10 @@ func (n *FCache) Get(flake string, ctx context.Context) (*common.File, error) {
 	if val, err := n.cache.Get(flake); err == nil {
 		log.Debug("Checking if cache contains file (it should)")
 		if f, ok := val.(*common.File); ok {
-			log.Info("Answering request from cache")
+			log.Debug("Answering request from cache")
+			if f.Data == nil {
+				f.Data = []byte{}
+			}
 			return f, nil
 		}
 		log.Error("Cache did not contain file")
@@ -126,7 +136,19 @@ func (n *FCache) Get(flake string, ctx context.Context) (*common.File, error) {
 }
 
 func (n *FCache) Delete(flake string, ctx context.Context) error {
-	defer n.cache.Remove(flake)
+	log := logger.LogFromCtx(packageName+".Delete", ctx)
+	// We delete the item from cache first to prevent
+	// leaking a deleted file from the cache for the brief
+	// period where the file is still in cache but not in
+	// the backend.
+	// Originally this was done inside a defer.
+	i, err := n.cache.Get(flake)
+	if err == nil {
+		n.cache.Remove(i)
+	} else {
+		log.Warn("Deleting non-cached file, ignoring error on cache.")
+	}
+
 	return n.underlyingBackend.Delete(flake, ctx)
 }
 

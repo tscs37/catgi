@@ -4,13 +4,19 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"git.timschuster.info/rls.moe/catgi/backend/common"
 	"git.timschuster.info/rls.moe/catgi/logger"
+	"git.timschuster.info/rls.moe/catgi/utils"
 )
 
-type handlerRunGC struct{}
+type handlerRunGC struct {
+	backend common.Backend
+}
 
-func newHandlerRunGC() http.Handler {
-	return &handlerRunGC{}
+func newHandlerRunGC(b common.Backend) http.Handler {
+	return &handlerRunGC{
+		backend: b,
+	}
 }
 
 func (h *handlerRunGC) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -18,11 +24,16 @@ func (h *handlerRunGC) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	log.Info("Starting GC")
 
-	files, err := curBe.RunGC(r.Context())
+	r = r.WithContext(utils.PutHTTPIntoContext(r, r.Context()))
 
-	if err != nil {
+	// <- BEGIN BACKEND INTERACTION ->
+	files, err := h.backend.RunGC(r.Context())
+	// -> END BACKEND INTERACTION
+
+	if err != nil && !common.IsHTTPOption(err) {
 		w.WriteHeader(500)
-		dat, err := json.Marshal(err)
+		var dat []byte
+		dat, err = json.Marshal(err)
 		if err != nil {
 			log.Error("Error on error encode: ", err)
 			w.Write([]byte("Critical Server Error"))
@@ -30,19 +41,26 @@ func (h *handlerRunGC) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		w.Write(dat)
 		return
+	} else if common.IsHTTPOption(err) {
+		httpopt := err.(common.ErrorHTTPOptions)
+		httpopt.PassOverHTTP(w)
+		if httpopt.WantsTakeover() {
+			httpopt.HTTPTakeover(r, w, r.Context())
+			return
+		}
 	}
 
 	dat, err := json.Marshal(files)
 
 	if err != nil {
 		w.WriteHeader(500)
-		err_dat, err := json.Marshal(err)
+		errDat, err := json.Marshal(err)
 		if err != nil {
 			log.Error("Error on error encode: ", err)
 			w.Write([]byte("Critical Server Error"))
 			return
 		}
-		w.Write(err_dat)
+		w.Write(errDat)
 		return
 	}
 

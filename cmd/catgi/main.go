@@ -14,6 +14,8 @@ import (
 	_ "git.timschuster.info/rls.moe/catgi/backend/b2"
 	_ "git.timschuster.info/rls.moe/catgi/backend/buntdb"
 	_ "git.timschuster.info/rls.moe/catgi/backend/fcache"
+	_ "git.timschuster.info/rls.moe/catgi/backend/localfs"
+	_ "git.timschuster.info/rls.moe/catgi/backend/s3"
 	"git.timschuster.info/rls.moe/catgi/config"
 	"git.timschuster.info/rls.moe/catgi/logger"
 	"git.timschuster.info/rls.moe/catgi/utils"
@@ -21,7 +23,6 @@ import (
 )
 
 var (
-	curBe  backend.Backend
 	curCfg config.Configuration
 )
 
@@ -62,7 +63,6 @@ func main() {
 		log.Errorf("Error: %s", err)
 		return
 	}
-	curBe = be
 	log.Infof("Loaded '%s' Backend Driver", be.Name())
 
 	piwik := newHandlerPiwik(curCfg.Piwik.Base, curCfg.Piwik.ID,
@@ -73,7 +73,7 @@ func main() {
 		fileGetHandler := newHandlerInjectLog(
 			piwik(
 				newHandlerCheckToken(true,
-					newHandlerServeGet(),
+					newHandlerServeGet(be),
 				),
 			),
 		)
@@ -99,7 +99,7 @@ func main() {
 		newHandlerInjectLog(
 			piwik(
 				newHandlerCheckToken(false,
-					newHandlerServePost(),
+					newHandlerServePost(be),
 				),
 			),
 		),
@@ -108,7 +108,7 @@ func main() {
 	router.Handle("/gc",
 		newHandlerInjectLog(
 			newHandlerCheckToken(false,
-				newHandlerRunGC(),
+				newHandlerRunGC(be),
 			),
 		),
 	).Methods("GET")
@@ -122,6 +122,14 @@ func main() {
 			),
 		),
 	).Methods("GET")
+
+	router.PathPrefix("/res/").Handler(http.StripPrefix("/res/",
+		newHandlerInjectLog(
+			newHandlerCheckToken(true,
+				newHandlerServeResources(),
+			),
+		),
+	)).Methods("GET")
 
 	router.Handle("/login",
 		newHandlerInjectLog(

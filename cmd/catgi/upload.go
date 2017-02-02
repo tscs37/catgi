@@ -10,12 +10,17 @@ import (
 	"git.timschuster.info/rls.moe/catgi/backend/common"
 	"git.timschuster.info/rls.moe/catgi/logger"
 	"git.timschuster.info/rls.moe/catgi/snowflakes"
+	"git.timschuster.info/rls.moe/catgi/utils"
 )
 
-type handlerServePost struct{}
+type handlerServePost struct {
+	backend common.Backend
+}
 
-func newHandlerServePost() http.Handler {
-	return &handlerServePost{}
+func newHandlerServePost(b common.Backend) http.Handler {
+	return &handlerServePost{
+		backend: b,
+	}
 }
 
 func (h *handlerServePost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
@@ -55,7 +60,7 @@ func (h *handlerServePost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 	file.Data = fileData
-	log.Infof("Read %d bytes of a file", len(file.Data))
+	log.Debugf("Read %d bytes of a file", len(file.Data))
 	dAt, err := common.FromString(r.Form.Get("delete_at"))
 	if err != nil {
 		log.Warn("Could not read delete time: ", err)
@@ -89,12 +94,24 @@ func (h *handlerServePost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	// TODO Implement Public Gallery
 	file.Public = false
 
-	err = curBe.Upload(flake, &file, r.Context())
-	if err != nil {
+	r = r.WithContext(utils.PutHTTPIntoContext(r, r.Context()))
+
+	// <- BEGIN BACKEND INTERACTION ->
+	err = h.backend.Upload(flake, &file, r.Context())
+	// -> END BACKEND INTERACTION <-
+
+	if err != nil && !common.IsHTTPOption(err) {
 		log.Warn("Could not commit file to database")
 		rw.WriteHeader(500)
 		fmt.Fprintf(rw, "Error: %s", err)
 		return
+	} else if common.IsHTTPOption(err) {
+		httpopt := err.(common.ErrorHTTPOptions)
+		httpopt.PassOverHTTP(rw)
+		if httpopt.WantsTakeover() {
+			httpopt.HTTPTakeover(r, rw, r.Context())
+			return
+		}
 	}
 
 	if !disableRedirect {

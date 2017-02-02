@@ -1,8 +1,9 @@
-package backend
+package b2
 
 import (
 	"context"
 	"io"
+	"strings"
 	"time"
 
 	"encoding/json"
@@ -14,6 +15,8 @@ import (
 
 const driverName = "b2"
 const packageName = "backend/b2"
+const skipSize = 2
+const metaFormat = "json"
 
 // Name returns the current drive Name
 func (b *B2Backend) Name() string { return driverName }
@@ -24,13 +27,8 @@ func (b *B2Backend) Upload(flake string, file *common.File, ctx context.Context)
 	log.Debug("Creating object '", flake, "'")
 	file.CreatedAt = common.FromTime(time.Now().UTC())
 	log.Debug("Writing File Data")
-	dataName := dataName(flake)
-	metaName := metaName(flake)
-	log.Debug("Writing to ", dataName)
-	if err := b.writeFile(dataName, file.Data, ctx); err != nil {
-		log.Error("Error writing data ", err)
-		return err
-	}
+	dataName := common.DataName(flake, skipSize)
+	metaName := common.MetaName(flake, skipSize, metaFormat)
 	log.Debug("Marshalling for ", metaName)
 	oldData := file.Data
 	file.Data = []byte{}
@@ -44,6 +42,12 @@ func (b *B2Backend) Upload(flake string, file *common.File, ctx context.Context)
 		return err
 	}
 	file.Data = oldData
+
+	log.Debug("Writing to ", dataName)
+	if err := b.writeFile(dataName, file.Data, ctx); err != nil {
+		log.Error("Error writing data ", err)
+		return err
+	}
 	return nil
 }
 
@@ -51,31 +55,25 @@ func (b *B2Backend) Upload(flake string, file *common.File, ctx context.Context)
 func (b *B2Backend) Exists(flake string, ctx context.Context) error {
 	log := logger.LogFromCtx(packageName+".Exists", ctx)
 	log.Debug("Getting context and object")
-	dataName := dataName(flake)
-	metaName := metaName(flake)
+	dataName := common.DataName(flake, skipSize)
+	metaName := common.MetaName(flake, skipSize, metaFormat)
 	exists, _, err := b.pingFile(dataName, ctx)
-	if err != nil {
+	if !exists || err != nil {
 		return common.NewErrorFileNotExists(flake, err)
-	}
-	if !exists {
-		return common.NewErrorFileNotExists(flake, nil)
 	}
 	exists, _, err = b.pingFile(metaName, ctx)
-	if err != nil {
+	if !exists || err != nil {
 		return common.NewErrorFileNotExists(flake, err)
-	}
-	if !exists {
-		return common.NewErrorFileNotExists(flake, nil)
 	}
 	return nil
 }
 
 // Get reads the B2 File from the backend
 func (b *B2Backend) Get(flake string, ctx context.Context) (*common.File, error) {
-	log := logger.LogFromCtx(packageName+".Exists", ctx).WithField("object", flake)
+	log := logger.LogFromCtx(packageName+".Get", ctx).WithField("object", flake)
 	var file = &common.File{}
-	dataName := dataName(flake)
-	metaName := metaName(flake)
+	dataName := common.DataName(flake, skipSize)
+	metaName := common.MetaName(flake, skipSize, metaFormat)
 
 	{
 		log.Debug("Loading Meta File")
@@ -118,8 +116,8 @@ func (b *B2Backend) Get(flake string, ctx context.Context) (*common.File, error)
 
 // Delete empties the file on the B2 backend
 func (b *B2Backend) Delete(flake string, ctx context.Context) error {
-	dataName := dataName(flake)
-	metaName := metaName(flake)
+	dataName := common.DataName(flake, skipSize)
+	metaName := common.MetaName(flake, skipSize, metaFormat)
 
 	err := b.deleteFile(dataName, ctx)
 	if err != nil {
@@ -128,6 +126,7 @@ func (b *B2Backend) Delete(flake string, ctx context.Context) error {
 
 	err = b.deleteFile(metaName, ctx)
 	if err != nil {
+		// Metafiles without data are better than Datafiles without Meta
 		return err
 	}
 
@@ -135,7 +134,7 @@ func (b *B2Backend) Delete(flake string, ctx context.Context) error {
 }
 
 // ListGlob returns a list of all files in the bucket
-func (b *B2Backend) ListGlob(ctx context.Context, glob string) ([]*common.File, error) {
+func (b *B2Backend) ListGlob(ctx context.Context, prefix string) ([]*common.File, error) {
 	log := logger.LogFromCtx(packageName+".ListGlob", ctx)
 	files := []*common.File{}
 	var cur *b2.Cursor
@@ -145,7 +144,7 @@ func (b *B2Backend) ListGlob(ctx context.Context, glob string) ([]*common.File, 
 			return nil, err
 		}
 		for _, obj := range objs {
-			if !isMetaFile(obj.Name()) {
+			if !common.IsMetaFile(obj.Name(), metaFormat) {
 				continue
 			}
 			var dat []byte
@@ -158,7 +157,9 @@ func (b *B2Backend) ListGlob(ctx context.Context, glob string) ([]*common.File, 
 				if err != nil {
 					log.Error("Meta Unmarshal Error: ", err)
 				} else {
-					files = append(files, curFile)
+					if strings.HasPrefix(obj.Name(), prefix) {
+						files = append(files, curFile)
+					}
 				}
 			}
 		}
@@ -170,36 +171,5 @@ func (b *B2Backend) ListGlob(ctx context.Context, glob string) ([]*common.File, 
 }
 
 func (b *B2Backend) RunGC(ctx context.Context) ([]common.File, error) {
-	log := logger.LogFromCtx(packageName+".RunGC", ctx)
-	var deletedFiles = []common.File{}
-
-	log.Info("Obtaining file list from backend")
-	fPtrs, err := b.ListGlob(ctx, "*")
-	if err != nil {
-		return nil, err
-	}
-
-	log.Info("Scanning for files to be deleted")
-	for _, v := range fPtrs {
-		if v.DeleteAt.After(time.Now().UTC()) {
-			log.Debug("Scheduling ", v.Flake, " for deletion")
-			deletedFiles = append(deletedFiles, *v)
-		}
-	}
-
-	// Deletion is put into a second step to A) speed up scan and B)
-	// be more resilient (we can return a full list of maybe GC'd data)
-	//
-	// Making a second run and comparing the returned lists may reveal
-	// some error points.
-	log.Info("Deleting files")
-	for _, v := range fPtrs {
-		err := b.Delete(v.Flake, ctx)
-		if err != nil {
-			log.Debug("Deleting flake ", v.Flake)
-			return deletedFiles, err
-		}
-	}
-
-	return deletedFiles, nil
+	return common.GenericGC(b, nil, nil, ctx)
 }

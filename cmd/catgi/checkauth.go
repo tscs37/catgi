@@ -30,7 +30,7 @@ func (h *handlerCheckToken) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var decodedToken *jwt.Token
 
 	// If no users are configured, disable authentication
-	if curCfg.Users == nil || len(curCfg.Users) == 0 {
+	if curCfg.Users == nil || len(curCfg.Users) == 0 || curCfg.IgnoreAuth {
 		log.Warn("No users configured, skipping auth-check")
 		ctx := r.Context()
 		ctx = context.WithValue(ctx, "user", "anonymous")
@@ -39,7 +39,7 @@ func (h *handlerCheckToken) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.next.ServeHTTP(w, r)
 		return
 	}
-	
+
 	{
 		cookie, err := r.Cookie("auth")
 		if err == http.ErrNoCookie {
