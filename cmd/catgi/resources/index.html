@@ -5,14 +5,18 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>catgi.rls.moe</title>
+    <script src="/res/dropzone.js"></script>
 </head>
 
 <body>
-    <form action="/file" method="POST" enctype="multipart/form-data">
-        <label>File <input required type="file" name="data"></label><br>
+    <form class="dropzone" id="file-upload" action="/file" method="POST" enctype="multipart/form-data">
+        <div class="dropzone-previews"></div>
+        <div class="fallback">
+            <label>File <input required type="file" name="data"></label><br>
+        </div>
         <label>Public <input type="checkbox" name="public"></label><br>
         <label>No Redirect <input type="checkbox" name="disable_redirect"></label><br>
-        <label>Delete At <input type="date" name="delete_at"></label><br>
+        <label>Delete At <input type="date" name="delete_at" required></label><br>
         <label><input type="submit" value="Submit"></label>
     </form>
 
@@ -20,6 +24,48 @@
     <hr><br><br>
 
     <a href="login">Login Page</a>
+
+    <script>
+        Dropzone.options.fileUpload = {
+            paramName: 'data',
+            maxFilesize: 1,
+            maxFiles: 1,
+            uploadMultiple: false,
+            method: 'POST',
+            autoProcessQueue: false,
+            init: function () {
+                var catZone = this;
+
+                this.element.querySelector("input[type=submit]").
+                    addEventListener("click", function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        catZone.processQueue();
+                    });
+
+                // Listen to the sendingmultiple event. In this case, it's the sendingmultiple event instead
+                // of the sending event because uploadMultiple is set to true.
+                this.on("sendingmultiple", function () {
+                    // Gets triggered when the form is actually being sent.
+                    // Hide the success button or the complete form.
+                });
+                this.on("successmultiple", function (files, response) {
+                    // Gets triggered when the files have successfully been sent.
+                    // Redirect user or notify of success.
+                    console.log(files);
+                    console.log(response);
+                });
+                this.on("errormultiple", function (files, response) {
+                    // Gets triggered when there was an error sending the files.
+                    // Maybe show form again, and notify user of error
+                    console.log(files);
+                    console.log(response);
+                });
+                this.on("maxfilesexceeded", function (file) { this.removeFile(file); });
+            }
+
+        }
+    </script>
 </body>
 
 </html>
