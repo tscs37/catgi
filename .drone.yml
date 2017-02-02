@@ -1,7 +1,4 @@
 pipeline:
-  clone:
-    image: plugins/git
-    skip_verify: true
   build:
     image: golang:1.7
     environment:
