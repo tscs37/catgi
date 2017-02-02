@@ -1,4 +1,6 @@
-// This package provdes crypto-functions for catgi.
+// Easy to use crypto package for a variety of usages.
+//
+// Catgi Security packages
 //
 // It provides a secure and fast HMAC function using Blake2b
 //

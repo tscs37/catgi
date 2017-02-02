@@ -58,9 +58,9 @@ func TestGetNBytes(t *testing.T) {
 
 	secKey := NewSecretKey(testKeySecret)
 
-	secretData := secKey.MustGetNSecretBytes(71, nil)
+	secretData := secKey.MustGetNSecretBytes(7100, nil)
 
-	assert.Len(secretData, 71, "Must have 71 bytes")
+	assert.Len(secretData, 7100, "Must have 7100 bytes")
 
-	assert.EqualValues(fmt.Sprintf("%X", secretData), testSecretData, "Derived Secret must be deterministic")
+	assert.Contains(fmt.Sprintf("%X", secretData), testSecretData, "Derived Secret must be deterministic")
 }
